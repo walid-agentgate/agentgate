@@ -1,0 +1,170 @@
+[
+  {
+    "id": "key_b52e87e4c0f7cbb0",
+    "tenantId": "ten_b30c8f0d05758144",
+    "prefix": "ag_3a79fbcb5e",
+    "hash": "3bcbd852e08154a7a1922c8530e2263685e5b84378cfa6dbcac28302ab89fd32",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T21:23:03.063Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_7f5cca5926c8c8d3",
+    "tenantId": "ten_26183b3e440243ff",
+    "prefix": "ag_fd1ced23e0",
+    "hash": "b599857149b70c2064b5f08f8600d881630321a1d1ef4d1e5267d4d74a154f57",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T21:14:47.880Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_22fab740f95e61e6",
+    "tenantId": "ten_9f4bb95f7ded9bfc",
+    "prefix": "ag_72c28e230f",
+    "hash": "c4dc04cdca126d6e211d9dfaf33d7b2328e93fb44428f7e6d8caaab8191ccee8",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T21:13:27.135Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_f4af7ae105e36d0d",
+    "tenantId": "ten_067fd890ff7bbf6d",
+    "prefix": "ag_f224809053",
+    "hash": "5221beef8468eaa5b70bf4229aecd98734c3e6d0d8b5db27e41519ece06ad78a",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T21:12:09.313Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_e124de1e21024c18",
+    "tenantId": "ten_0e032dede61bf976",
+    "prefix": "ag_ff26faa334",
+    "hash": "ea26929335e5b675806915aa75e87254881b4a4c5b65a72dc7ee4898ab7c976b",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T18:27:55.320Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_c8ecd95c1019a45e",
+    "tenantId": "ten_984a95ef34733673",
+    "prefix": "ag_f54c599270",
+    "hash": "b8b30faec9ef48c68a6a78c126cce7958b2427a70e76b5d72b78d87040634f0e",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T18:27:16.021Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_04010a3f1a6d77c5",
+    "tenantId": "ten_ec37aae9cf8907d2",
+    "prefix": "ag_1e9f45a387",
+    "hash": "98ebe94fa5fe98583cc51e52de6db50a13ca9f57de27a5d6be5b7f324d2fa2d4",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T18:26:18.698Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_8997d5ebdc2ac05f",
+    "tenantId": "ten_ab4d06dd66f3ab0f",
+    "prefix": "ag_8054ef67ce",
+    "hash": "193c316ed83ed87cf11936448ce87dd307cbfacfa6113c117b446e82286bcd39",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T18:24:41.137Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_54b077fdc8fee6bf",
+    "tenantId": "ten_b0931d69e800081d",
+    "prefix": "ag_0f0e1b76bd",
+    "hash": "69024de9dc0ffe9d4f187e796740d59e6b6d6b1d55f48a95fcbd46c143b7e043",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:55:29.178Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_8a5c687926eff1c2",
+    "tenantId": "ten_3bb79b7e86d33be7",
+    "prefix": "ag_773ab13129",
+    "hash": "e37b2d323e269b457feca4c48bbf91c63742ad6dfc177b8f4bdfc7868c0eae33",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:54:29.372Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_1c3dcaa264dd6dc5",
+    "tenantId": "ten_7eda91cd7de63e94",
+    "prefix": "ag_743e3e642b",
+    "hash": "dc550abed91463005b5415545fb565fee14002687bccda935cc6c7a7b8fd82da",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:52:23.834Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_ed181d09d9151cb2",
+    "tenantId": "ten_f64809601ce8cd3c",
+    "prefix": "ag_fc5d126242",
+    "hash": "585e49f761ca6e8ef759728f9f898b01c4d7d7d9853f8f70761d4c8917285205",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:51:42.749Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_a7ee27ab430f0a23",
+    "tenantId": "ten_c83235ada321d000",
+    "prefix": "ag_92a5df8ba5",
+    "hash": "9c82f2a1270916eef4e8f430a856110d94e3414400ba00caeaceacd3987b80e7",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:51:04.613Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_14a9adf2aa8b0aba",
+    "tenantId": "ten_17d9d50cf8657ec6",
+    "prefix": "ag_322c6156e4",
+    "hash": "3d5666ee615d2a3e733d41dd22da4d9fa20f0209edccb461c99bb21f2f2b0d84",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-09-28T17:50:25.085Z",
+    "expiresAt": null,
+    "revokedAt": null
+  }
+]

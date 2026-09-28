@@ -1,0 +1,49 @@
+{
+  "name": "agentgate-runtime-control",
+  "version": "2.13.8",
+  "type": "module",
+  "description": "Runtime control plane and SaaS governance layer for AI agent tool execution",
+  "exports": {
+    ".": "./src/index.js",
+    "./policy-engine": "./src/policy-engine.js",
+    "./mcp-gateway": "./src/mcp-gateway.js",
+    "./policy-builder": "./src/policy-builder.js",
+    "./control-plane": "./src/control-plane.js",
+    "./agentgate": "./src/agentgate.js",
+    "./security-report": "./src/security-report.js",
+    "./behavior": "./src/behavior.js",
+    "./identity": "./src/identity.js",
+    "./policy-registry": "./src/policy-registry.js",
+    "./multi-tenant": "./src/multi-tenant.js",
+    "./telemetry": "./src/telemetry.js",
+    "./oidc": "./src/oidc.js",
+    "./saas": "./src/saas.js",
+    "./mcp-scanner": "./src/mcp-scanner.js",
+    "./egress-guard": "./src/egress-guard.js",
+    "./observability": "./src/observability.js"
+  },
+  "bin": {
+    "agentgate": "./bin/agentgate.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "prepublishOnly": "npm test",
+    "benchmark": "node scripts/performance-benchmark.mjs",
+    "release:check": "node scripts/release-check.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "src",
+    "bin",
+    "examples",
+    "schema",
+    "docs",
+    "standalone.html",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ]
+}

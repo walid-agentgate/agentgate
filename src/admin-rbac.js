@@ -1,0 +1,3 @@
+export const ADMIN_ROLES=Object.freeze({OWNER:['*'],ADMIN:['tenant:read','tenant:write','keys:read','keys:write','policies:read','policies:write','webhooks:read','webhooks:write','runs:read','approvals:resolve'],OPERATOR:['runs:read','approvals:resolve','policies:read'],VIEWER:['runs:read','policies:read']});
+export function adminAuthorize(identity, permission){ const roles=Array.isArray(identity?.roles)?identity.roles:[]; return roles.some(role=>ADMIN_ROLES[role]?.includes('*')||ADMIN_ROLES[role]?.includes(permission)); }
+export function requireAdmin(identity,permission){ if(!adminAuthorize(identity,permission)){const e=new Error('Admin permission denied');e.code='AGENTGATE_ADMIN_FORBIDDEN';throw e;} return true; }

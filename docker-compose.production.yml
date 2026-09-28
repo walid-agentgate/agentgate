@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agentgate
+      POSTGRES_USER: agentgate
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - agentgate_pg:/var/lib/postgresql/data
+      - ./schema/postgres.sql:/docker-entrypoint-initdb.d/001-agentgate.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentgate -d agentgate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  agentgate:
+    build: .
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8787
+      DATABASE_URL: ${DATABASE_URL:-postgresql://agentgate:${POSTGRES_PASSWORD}@postgres:5432/agentgate}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8787:8787"
+
+volumes:
+  agentgate_pg:
