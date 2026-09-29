@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 import { evaluate } from '../src/policy-engine.js';
 import { createAgentGate } from '../src/agentgate.js';
@@ -185,20 +185,38 @@ export { pack };
 } else if (cmd === 'test' || cmd === 'check') {
   console.log(JSON.stringify(evaluate({ action, amount: Number(amount) }), null, 2));
 } else if (cmd === 'attack') {
-  const gateway = createMCPGateway({
-    mode: 'enforce',
-    policies: { productionBlock: true },
-    tools: [
-      { name: 'export_all', handler: async () => ({ executed: true }) },
-      { name: 'update_production', handler: async () => ({ executed: true }) },
-      { name: 'delete', handler: async () => ({ executed: true }) },
-      { name: 'refund', handler: async args => ({ refunded: args.amount }) },
-      { name: 'publish', handler: async () => ({ executed: true }) }
-    ]
-  });
+  const configIndex = process.argv.indexOf('--config');
+  const configPath = configIndex >= 0 ? process.argv[configIndex + 1] : null;
+  const defaultTools = [
+    { name: 'export_all', handler: async () => ({ executed: true }) },
+    { name: 'update_production', handler: async () => ({ executed: true }) },
+    { name: 'delete', handler: async () => ({ executed: true }) },
+    { name: 'refund', handler: async args => ({ refunded: args.amount }) },
+    { name: 'publish', handler: async () => ({ executed: true }) }
+  ];
+  let gateway = null;
+  let label = 'built-in default policies';
+  if (configPath) {
+    const resolved = path.resolve(process.cwd(), configPath);
+    try {
+      const mod = await import(pathToFileURL(resolved).href);
+      const gate = mod.agentgate || mod.default;
+      if (!gate || typeof gate.withMCP !== 'function') {
+        console.error(`No 'agentgate' export found in ${configPath} (expected the object returned by createAgentGate()). Falling back to built-in policies.`);
+      } else {
+        gateway = gate.withMCP({ mode: 'enforce', tools: defaultTools });
+        label = `your policies (${configPath})`;
+      }
+    } catch (err) {
+      console.error(`Could not load config ${configPath}: ${err.message}. Falling back to built-in policies.`);
+    }
+  }
+  if (!gateway) {
+    gateway = createMCPGateway({ mode: 'enforce', policies: { productionBlock: true }, tools: defaultTools });
+  }
   const results = await runGatewayAttackLab(gateway);
   const summary = summarizeAttackResults(results);
-  console.log('\nAgentGate Attack Runner');
+  console.log(`\nAgentGate Attack Runner — testing against ${label}`);
   console.table(results.map(x => ({ test: x.name, decision: x.decision, risk: x.risk, passed: x.passed, runId: x.runId })));
   console.log('Summary:', JSON.stringify(summary));
   process.exitCode = summary.failed ? 2 : 0;
