@@ -52,8 +52,19 @@ docker run --rm -p 8787:8787 agentgate
 
 ### Examples
 
+- `examples/protect-first-tool.mjs` — protect four real tools in one file (`read_customer` → ALLOW, `delete_customer` → ASK, `refund` → ASK/BLOCK by amount, `export_all` → BLOCK). Start here.
 - `examples/refund-agent.mjs` — protect a real side-effecting refund tool.
 - `examples/policy-bundle.mjs` — test and activate a versioned policy bundle.
+
+### Test your own tools against Attack Lab
+
+By default, `agentgate attack` runs the built-in attack scenarios against AgentGate's default policies. To test them against **your own** `agentgate.config.mjs` (the policies you actually ship with), pass `--config`:
+
+```bash
+agentgate attack --config ./agentgate.config.mjs
+```
+
+The config file must export an `agentgate` object created with `createAgentGate()` (exactly what `agentgate init` generates).
 
 ## Production readiness
 
