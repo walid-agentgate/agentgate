@@ -1,6 +1,6 @@
 import { evaluate } from './policy-engine.js';
 import { createPersistentRunStore, createPersistentApprovalStore } from './persistent-store.js';
-import { createApprovalStore, createApprovalRequest, APPROVAL_STATUS } from './approval.js';
+import { createApprovalStore, createApprovalRequest, APPROVAL_STATUS, isApprovalExpired } from './approval.js';
 
 export class RunStore {
   constructor(limit = 25000) { this.limit = limit; this.runs = []; }
@@ -45,6 +45,7 @@ export function createRuntime(options = {}) {
           decision: event.decision,
           risk: event.risk,
           reason: event.reason,
+          ttlMs: options.approvalTTLMs,
           metadata: { action: request.action || request.tool || null }
         }, approvalStore);
         event.status = 'pending_approval';
@@ -65,11 +66,28 @@ export function createRuntime(options = {}) {
     return { status: 'executed', value, agentgate: event };
   }
 
-  function approvals(status) { return approvalStore.list(status); }
-  function getApproval(id) { return approvalStore.get(id); }
+  // Lazily flips a PENDING-but-expired approval to EXPIRED and drops its
+  // pending execution, so a stale approval can never be actioned late.
+  function expireIfStale(approval) {
+    if (!approval || approval.status !== APPROVAL_STATUS.PENDING) return approval;
+    if (!isApprovalExpired(approval)) return approval;
+    approval.status = APPROVAL_STATUS.EXPIRED;
+    approval.resolvedAt = new Date().toISOString();
+    const item = pending.get(approval.id);
+    if (item) { item.event.status = 'expired'; item.event.approval = { status: approval.status, resolvedAt: approval.resolvedAt }; }
+    pending.delete(approval.id);
+    approvalStore.save?.();
+    return approval;
+  }
+
+  function approvals(status) {
+    approvalStore.list(APPROVAL_STATUS.PENDING).forEach(expireIfStale);
+    return approvalStore.list(status);
+  }
+  function getApproval(id) { return expireIfStale(approvalStore.get(id)); }
 
   async function approve(approvalId) {
-    const approval = approvalStore.get(approvalId);
+    const approval = expireIfStale(approvalStore.get(approvalId));
     if (!approval) return { ok: false, error: 'Approval not found' };
     if (approval.status !== APPROVAL_STATUS.PENDING) return { ok: false, error: `Approval is already ${approval.status}`, approval };
     const item = pending.get(approvalId);
@@ -99,7 +117,7 @@ export function createRuntime(options = {}) {
   }
 
   function deny(approvalId, reason = 'Denied by approver') {
-    const approval = approvalStore.get(approvalId);
+    const approval = expireIfStale(approvalStore.get(approvalId));
     if (!approval) return { ok: false, error: 'Approval not found' };
     if (approval.status !== APPROVAL_STATUS.PENDING) return { ok: false, error: `Approval is already ${approval.status}`, approval };
     const item = pending.get(approvalId);

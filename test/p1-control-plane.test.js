@@ -5,8 +5,10 @@ import { createMCPGateway } from '../src/mcp-gateway.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'agentgate-p1-')); }
+const PACKAGE_VERSION = JSON.parse(fs.readFileSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf8')).version;
 
 test('P1 control plane exposes live attack lab and audit export', async () => {
   const dir = tmp();
@@ -22,7 +24,7 @@ test('P1 control plane exposes live attack lab and audit export', async () => {
   assert.equal(attack.summary.failed, 0);
   assert.ok(attack.results.every(x => x.runId));
   const audit = await cp.api('/api/audit/export', 'GET', {}, {});
-  assert.equal(audit.version, '2.13.8');
+  assert.equal(audit.version, PACKAGE_VERSION);
   assert.ok(Array.isArray(audit.runs));
   assert.ok(Array.isArray(audit.approvals));
 });
@@ -58,7 +60,7 @@ test('P1 HTTP approval and audit export endpoints work end-to-end', async () => 
   const exported = await fetch(`http://127.0.0.1:${port}/api/audit/export`);
   assert.equal(exported.status, 200);
   const json = await exported.json();
-  assert.equal(json.version, '2.13.8');
+  assert.equal(json.version, PACKAGE_VERSION);
   assert.ok(json.runs.length >= 1);
   server.close();
 });

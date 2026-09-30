@@ -12,7 +12,7 @@ test('v2.2 launch package includes developer docs and deployment assets', () => 
     assert.equal(fs.existsSync(path.join(root,file)), true, file);
   }
   const pkg = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
-  assert.equal(pkg.version, '2.13.8');
+  assert.match(pkg.version, /^\d+\.\d+\.\d+$/, 'package.json version must be a plain semver string');
   assert.ok(pkg.files.includes('docs'));
 });
 
