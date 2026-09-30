@@ -35,6 +35,7 @@ Usage:
   agentgate egress <response.json> [--strict]
   agentgate policy <create|list|test|activate|rollback|diff> <name> ...
   agentgate tenant <create|list|key|revoke|rotate> ...
+  agentgate approval <list|approve|deny> [id] [reason] [--url <url>] [--key <apiKey>]
   agentgate --help
   agentgate doctor
   agentgate simulate
@@ -108,9 +109,22 @@ export { pack };
 } else if (cmd === 'doctor') {
   const configPath = path.resolve(process.cwd(), 'agentgate.config.mjs');
   let config = { mode: 'enforce', policies: { productionBlock: true, autoApproveAmount: 500, approvalAmount: 5000 }, authRequired: true };
-  try { const mod = await import(`file://${configPath}?doctor=${Date.now()}`); const gate = mod.agentgate || {}; config = { ...config, ...(mod.config || {}), ...(gate.config || {}), ...(gate.mode ? { mode: gate.mode } : {}), ...(gate.policies ? { policies: gate.policies } : {}) }; } catch {}
+  let foundConfig = false;
+  try { const mod = await import(`file://${configPath}?doctor=${Date.now()}`); const gate = mod.agentgate || {}; config = { ...config, ...(mod.config || {}), ...(gate.config || {}), ...(gate.mode ? { mode: gate.mode } : {}), ...(gate.policies ? { policies: gate.policies } : {}) }; foundConfig = true; } catch {}
   const report = runDoctorChecks({ config });
-  console.log(JSON.stringify(report, null, 2)); process.exitCode = report.ok ? 0 : 2;
+  console.log(JSON.stringify(report, null, 2));
+  if (!foundConfig) {
+    console.error('\nNo agentgate.config.mjs found here — checked built-in defaults instead. Run `agentgate init` first to create one for your own policies.');
+  }
+  if (config.mode === 'observe') {
+    console.error('\n⚠️  WARNING: mode is "observe". Decisions are being recorded but NOTHING is actually blocked or held for approval yet — destructive tools will still execute. Set mode: \'enforce\' in agentgate.config.mjs once you are ready to protect real tools.');
+  }
+  if (report.ok) {
+    console.error('\nNext: protect your first tool — see examples/protect-first-tool.mjs for a worked example (read/delete/refund/export), or run `agentgate attack --config agentgate.config.mjs` to test your policy against the built-in attack scenarios.');
+  } else {
+    console.error('\nFix the failing checks above, then run `agentgate doctor` again.');
+  }
+  process.exitCode = report.ok ? 0 : 2;
 } else if (cmd === 'simulate') {
   const policy = { productionBlock: true, autoApproveAmount: 500, approvalAmount: 5000 };
   console.log(JSON.stringify(simulatePolicyMatrix({ policies: policy }), null, 2));
@@ -287,7 +301,85 @@ export { pack };
       ? `import { createAgentGate, getPolicyPack } from 'agentgate-runtime-control';\n\nconst pack = getPolicyPack('${pack.id}');\n\nexport const agentgate = createAgentGate({\n  agent: 'SupportAgent',\n  mode: 'observe',\n  policies: pack.policies\n});\n\nexport { pack };\n`
       : `import { createAgentGate } from 'agentgate-runtime-control';\n\nexport const agentgate = createAgentGate({\n  agent: 'MyAgent',\n  mode: 'enforce',\n  policies: {\n    productionBlock: true,\n    autoApproveAmount: 500,\n    approvalAmount: 5000\n  }\n});\n`;
     try { await fs.access(file); console.error('agentgate.config.mjs already exists'); process.exitCode = 1; }
-    catch { await fs.writeFile(file, content, 'utf8'); console.log(`Created ${file}${pack ? ` from ${pack.name} (enforce mode)` : ''}`); }
+    catch {
+      await fs.writeFile(file, content, 'utf8');
+      console.log(`Created ${file}${pack ? ` from ${pack.name} (enforce mode)` : ''}`);
+      console.log('\nNext: run `agentgate doctor` to check this config, then see examples/protect-first-tool.mjs to protect your first tool.');
+    }
+  }
+} else if (cmd === 'approval') {
+  const sub = process.argv[3];
+  const urlIndex = process.argv.indexOf('--url');
+  const baseUrl = (urlIndex >= 0 ? process.argv[urlIndex + 1] : (process.env.AGENTGATE_URL || 'http://localhost:8787')).replace(/\/$/, '');
+  const keyIndex = process.argv.indexOf('--key');
+  const apiKey = keyIndex >= 0 ? process.argv[keyIndex + 1] : (process.env.AGENTGATE_API_KEY || null);
+
+  async function authHeaders() {
+    if (apiKey) return { 'x-agentgate-key': apiKey, 'content-type': 'application/json' };
+    // No API key given — try to pick up the local session cookie that `agentgate dev`
+    // hands out on GET '/', so this CLI can talk to a locally running dev server
+    // without any extra setup.
+    try {
+      const res = await fetch(`${baseUrl}/`);
+      const cookie = res.headers.get('set-cookie');
+      const match = cookie && cookie.match(/agentgate_local_session=[^;]+/);
+      if (match) return { cookie: match[0], 'content-type': 'application/json' };
+    } catch {}
+    return { 'content-type': 'application/json' };
+  }
+
+  async function call(apiPath, method = 'GET', body) {
+    let headers;
+    try { headers = await authHeaders(); }
+    catch (err) { return { status: 0, json: { error: `Could not reach ${baseUrl}: ${err.message}` } }; }
+    try {
+      const res = await fetch(`${baseUrl}${apiPath}`, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      let json;
+      try { json = await res.json(); } catch { json = { error: `Non-JSON response (status ${res.status})` }; }
+      return { status: res.status, json };
+    } catch (err) {
+      return { status: 0, json: { error: `Could not reach ${baseUrl}: ${err.message}` } };
+    }
+  }
+
+  const unreachable = (result) => {
+    console.error(`Could not reach AgentGate at ${baseUrl}${result.status ? ` (HTTP ${result.status})` : ''}: ${result.json.error || 'unknown error'}`);
+    console.error('Is `agentgate dev` running? Point at it with --url <http://host:port>, or pass --key <apiKey> if auth is required.');
+    process.exitCode = 1;
+  };
+
+  if (sub === 'list') {
+    const statusIndex = process.argv.indexOf('--status');
+    const status = statusIndex >= 0 ? process.argv[statusIndex + 1] : undefined;
+    const result = await call(`/api/approvals${status ? `?status=${encodeURIComponent(status)}` : ''}`);
+    if (result.status !== 200) unreachable(result);
+    else {
+      const approvals = result.json.approvals || [];
+      if (!approvals.length) console.log('No approvals found.');
+      else console.table(approvals.map(a => ({ id: a.id, status: a.status, action: a.metadata?.action || a.request?.action || '', createdAt: a.createdAt, expiresAt: a.expiresAt || 'never' })));
+    }
+  } else if (sub === 'approve' || sub === 'deny') {
+    const id = process.argv[4];
+    if (!id) { console.error(`Usage: agentgate approval ${sub} <approvalId>${sub === 'deny' ? ' [reason]' : ''} [--url <url>] [--key <apiKey>]`); process.exitCode = 1; }
+    else {
+      const reason = sub === 'deny' ? process.argv[5] : undefined;
+      const apiPath = sub === 'approve' ? '/api/approvals/approve' : '/api/approvals/deny';
+      const result = await call(apiPath, 'POST', sub === 'approve' ? { approvalId: id } : { approvalId: id, reason });
+      if (result.status !== 200 || result.json.ok === false) {
+        if (result.status === 0 || result.status === 401 || result.status === 403) unreachable(result);
+        else { console.error(`Could not ${sub} ${id}: ${result.json.error || `HTTP ${result.status}`}`); process.exitCode = 1; }
+      } else {
+        console.log(JSON.stringify(result.json, null, 2));
+      }
+    }
+  } else {
+    console.error(`Usage: agentgate approval <list|approve|deny> ...
+  agentgate approval list [--status pending|approved|denied|expired] [--url <url>] [--key <apiKey>]
+  agentgate approval approve <approvalId> [--url <url>] [--key <apiKey>]
+  agentgate approval deny <approvalId> [reason] [--url <url>] [--key <apiKey>]
+
+By default this talks to a locally running \`agentgate dev\` server at http://localhost:8787.`);
+    process.exitCode = 1;
   }
 } else if (cmd === 'dev') {
   const htmlPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../standalone.html');
