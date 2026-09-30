@@ -2,7 +2,7 @@ import http from 'node:http';
 import { createRequire } from 'node:module';
 import { randomUUID } from 'node:crypto';
 import { evaluate } from './policy-engine.js';
-import { createApprovalStore, createApprovalRequest, APPROVAL_STATUS } from './approval.js';
+import { createApprovalStore, createApprovalRequest, APPROVAL_STATUS, isApprovalExpired } from './approval.js';
 import { createPersistentRunStore, createPersistentApprovalStore } from './persistent-store.js';
 import { createEventBus } from './event-bus.js';
 import { createTelemetry } from './telemetry.js';
@@ -52,8 +52,12 @@ export function createMCPGateway(options = {}) {
     tools: () => [...tools.keys()],
     runs: (tenantId) => { const all = runStore ? runStore.list() : [...runs]; return tenantId ? all.filter(run => run.tenantId === tenantId) : all; },
     replay: (runId, tenantId) => { const run = runStore ? runStore.get(runId) : (runs.find((item) => item.id === runId) || null); return !tenantId || run?.tenantId === tenantId ? run : null; },
-    approvals: (status, tenantId) => { const all = approvals.list(status); return tenantId ? all.filter(item => item.tenantId === tenantId) : all; },
-    getApproval: (approvalId, tenantId) => { const item = approvals.get(approvalId); return !tenantId || item?.tenantId === tenantId ? item : null; },
+    approvals: (status, tenantId) => {
+      approvals.list(APPROVAL_STATUS.PENDING).forEach(expireIfStale);
+      const all = approvals.list(status);
+      return tenantId ? all.filter(item => item.tenantId === tenantId) : all;
+    },
+    getApproval: (approvalId, tenantId) => { const item = expireIfStale(approvals.get(approvalId)); return !tenantId || item?.tenantId === tenantId ? item : null; },
     approve: (approvalId, tenantId) => resolveApproval(approvalId, true, undefined, tenantId),
     deny: (approvalId, reason, tenantId) => resolveApproval(approvalId, false, reason, tenantId),
     events: eventBus,
@@ -73,6 +77,20 @@ export function createMCPGateway(options = {}) {
   };
 
   for (const tool of options.tools || []) registerTool(tool);
+
+  // Lazily flips a PENDING-but-past-TTL approval to EXPIRED the next time it's
+  // looked at (list/get/approve/deny), so it can never be actioned late.
+  function expireIfStale(approval) {
+    if (!approval || approval.status !== APPROVAL_STATUS.PENDING) return approval;
+    if (!isApprovalExpired(approval)) return approval;
+    approval.status = APPROVAL_STATUS.EXPIRED;
+    approval.resolvedAt = new Date().toISOString();
+    const run = runStore ? runStore.get(approval.runId) : runs.find(item => item.id === approval.runId);
+    if (run) { run.status = 'expired'; run.approval = { status: approval.status, resolvedAt: approval.resolvedAt }; }
+    approvals.save?.();
+    runStore?.save?.();
+    return approval;
+  }
 
   function registerTool(tool) {
     if (!tool?.name || typeof tool.handler !== 'function') {
@@ -183,6 +201,7 @@ export function createMCPGateway(options = {}) {
         decision: decision.decision,
         risk: decision.risk,
         reason: decision.reason,
+        ttlMs: options.approvalTTLMs,
         metadata: { tool: name, rpcRequestId: id, arguments: clone(input) }
       }, approvals);
       run.status = 'pending_approval';
@@ -245,7 +264,7 @@ export function createMCPGateway(options = {}) {
 
 
   async function resolveApproval(approvalId, approved, denialReason, tenantId) {
-    const approval = approvals.get(approvalId);
+    const approval = expireIfStale(approvals.get(approvalId));
     if (tenantId && approval?.tenantId !== tenantId) return { ok: false, error: 'Approval not found' };
     if (!approval) return { ok: false, error: 'Approval not found' };
     if (approval.status !== APPROVAL_STATUS.PENDING) return { ok: false, error: `Approval is already ${approval.status}`, approval };
