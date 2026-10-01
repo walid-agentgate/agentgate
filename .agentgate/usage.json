@@ -1,5 +1,117 @@
 [
   {
+    "orgId": "org_9d4857090df0e402",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 2,
+    "id": "usage_8115ff6912e42942",
+    "updatedAt": "2026-10-01T20:42:35.952Z"
+  },
+  {
+    "orgId": "org_dd83585b45523ea9",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 1000,
+    "id": "usage_71f57b691d037e23",
+    "updatedAt": "2026-10-01T20:42:35.885Z"
+  },
+  {
+    "orgId": "org_45d0b46e93024da1",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 2,
+    "id": "usage_aaa61388b5dfa3dd",
+    "updatedAt": "2026-10-01T20:39:30.342Z"
+  },
+  {
+    "orgId": "org_158b136248bd9832",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 1000,
+    "id": "usage_08a58861e023d41e",
+    "updatedAt": "2026-10-01T20:39:30.279Z"
+  },
+  {
+    "orgId": "org_65f96c57bc632eae",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 2,
+    "id": "usage_bf1ed18efef084eb",
+    "updatedAt": "2026-10-01T12:58:45.841Z"
+  },
+  {
+    "orgId": "org_4b28a4ce11c1c6e8",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 1000,
+    "id": "usage_08fb71fa047acd46",
+    "updatedAt": "2026-10-01T12:58:45.800Z"
+  },
+  {
+    "orgId": "org_c01bdf9b5632625e",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 2,
+    "id": "usage_12cc65f6a4bc68ae",
+    "updatedAt": "2026-10-01T07:42:59.813Z"
+  },
+  {
+    "orgId": "org_a19048855db6a726",
+    "metric": "runs",
+    "period": "2026-10",
+    "quantity": 1000,
+    "id": "usage_334dfce70ebe52bb",
+    "updatedAt": "2026-10-01T07:42:59.739Z"
+  },
+  {
+    "orgId": "org_e271d6dc19ea51ce",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 2,
+    "id": "usage_cd901ee71a465528",
+    "updatedAt": "2026-09-30T09:08:59.132Z"
+  },
+  {
+    "orgId": "org_f38920b689f8d047",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 1000,
+    "id": "usage_2028be254cd0177a",
+    "updatedAt": "2026-09-30T09:08:59.094Z"
+  },
+  {
+    "orgId": "org_3d789892e11fd74b",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 2,
+    "id": "usage_da2320ffb4b27d06",
+    "updatedAt": "2026-09-30T08:36:11.380Z"
+  },
+  {
+    "orgId": "org_7cd40912a6563e04",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 1000,
+    "id": "usage_0fee565712e6e766",
+    "updatedAt": "2026-09-30T08:36:11.343Z"
+  },
+  {
+    "orgId": "org_38ba43020b473d91",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 2,
+    "id": "usage_edfc9ce7b5ab2bb9",
+    "updatedAt": "2026-09-30T08:11:42.003Z"
+  },
+  {
+    "orgId": "org_8c08bdc2de6806eb",
+    "metric": "runs",
+    "period": "2026-09",
+    "quantity": 1000,
+    "id": "usage_0cdb8ff7b421f749",
+    "updatedAt": "2026-09-30T08:11:41.962Z"
+  },
+  {
     "orgId": "org_a6841e89f8dd08b5",
     "metric": "runs",
     "period": "2026-09",

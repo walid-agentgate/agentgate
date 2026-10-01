@@ -18,10 +18,42 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const PACKAGE_VERSION = require('../package.json').version;
 
+// Reads and parses a POST body with a hard size cap. Earlier versions bailed
+// out of the read loop as soon as the cap was exceeded without consuming the
+// rest of the incoming request — on a keep-alive connection, those unread
+// bytes are still in flight from the client and get misinterpreted as the
+// start of the next request, which is what caused an unrelated follow-up
+// request on the same socket to hang until timeout instead of failing fast.
+// Fix: once oversized, keep draining every chunk (so the socket/HTTP parser
+// ends this request cleanly) but stop buffering it into memory, then raise a
+// typed error with the right status for the caller to respond with.
+async function readJsonBody(req, maxBodySize) {
+  let raw = '';
+  let bytes = 0;
+  let oversized = false;
+  for await (const chunk of req) {
+    bytes += chunk.length;
+    if (bytes > maxBodySize) { oversized = true; continue; }
+    raw += chunk;
+  }
+  if (oversized) {
+    const error = new Error('Payload too large');
+    error.status = 413;
+    throw error;
+  }
+  try {
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    const error = new Error('Invalid JSON');
+    error.status = 400;
+    throw error;
+  }
+}
+
 export function createControlPlane(options = {}) {
   const gateway = options.gateway || createMCPGateway(options);
   const staticHtml = options.html;
-  const agentStore = options.agentStore || (options.persistence ? createPersistentAgentStore({ filePath: options.agentPersistence || `${options.persistence}/agents.json` }) : null);
+  const agentStore = options.agentStore || (options.persistence ? createPersistentAgentStore({ filePath: options.agentPersistence || `${options.persistence}/agents.json`, recoverFromCorruption: options.recoverFromCorruption, onCorruption: options.onPersistenceCorruption }) : null);
   const tenantRegistry = options.tenantRegistry || new TenantRegistry({ filePath: `${options.persistence || '.agentgate'}/tenants.json`, keyPath: `${options.persistence || '.agentgate'}/api-keys.json` });
   const webhookRegistry = options.webhookRegistry || new WebhookRegistry({ filePath: `${options.persistence || '.agentgate'}/webhooks.json`, deliveryPath: `${options.persistence || '.agentgate'}/webhook-deliveries.json` });
   const authRequired = options.authRequired !== false;
@@ -69,7 +101,11 @@ export function createControlPlane(options = {}) {
     const scopedRuns = () => gateway.runs(tenantId);
     const scopedApprovals = (status) => gateway.approvals(status, tenantId);
     if (path === '/api/health') return { ok: true, mode: gateway.mode, version: gateway?.serverInfo?.version || PACKAGE_VERSION };
-    if (path === '/api/ready') return { ok: true, ready: true, mode: gateway.mode, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000) };
+    if (path === '/api/ready') {
+      const persistence = gateway.persistenceHealth?.() || { persistent: false, degraded: false, corruptions: [] };
+      const ready = !persistence.degraded;
+      return { ok: ready, ready, mode: gateway.mode, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), persistence };
+    }
     if (path === '/api/kill-switch' && method === 'GET') return gateway.killStatus?.() || {killed:false};
     if (path === '/api/kill-switch' && method === 'POST') { if (body.enabled === false) return gateway.unkill?.(); return gateway.kill?.(body.reason); }
     if (path === '/api/metrics') return gateway.telemetry?.snapshot?.() || { uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), counters: {}, latency: {} };
@@ -171,11 +207,18 @@ export function createControlPlane(options = {}) {
     if (url.pathname.startsWith('/api/')) {
       let body = {};
       if (req.method === 'POST') {
-        let raw = '';
-        let bodyBytes = 0;
         const maxBodySize = Number(options.maxBodySize || 1024 * 1024);
-        for await (const chunk of req) { bodyBytes += chunk.length; if (bodyBytes > maxBodySize) { res.writeHead(413, {'content-type':'application/json'}); res.end(JSON.stringify({error:'Payload too large'})); return; } raw += chunk; }
-        try { body = raw ? JSON.parse(raw) : {}; } catch { res.writeHead(400, {'content-type':'application/json'}); res.end(JSON.stringify({error:'Invalid JSON'})); return; }
+        try {
+          body = await readJsonBody(req, maxBodySize);
+        } catch (error) {
+          // 'connection: close' on top of fully draining the body (above) is
+          // belt-and-suspenders: it tells the client itself not to reuse this
+          // socket, so even a client we haven't fully drained yet won't have
+          // its next request misread on this connection.
+          res.writeHead(error.status || 400, { 'content-type': 'application/json', 'cache-control': 'no-store', 'connection': 'close' });
+          res.end(JSON.stringify({ error: error.message }));
+          return;
+        }
       }
       const limitKey = req.headers['x-agentgate-key'] || req.socket.remoteAddress || 'anonymous';
       const rate = limiter.check(String(limitKey));
@@ -204,7 +247,8 @@ export function createControlPlane(options = {}) {
       }
       const result = await api(url.pathname, req.method, body, Object.fromEntries(url.searchParams.entries()), authContext);
       if (result._html) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); res.end(result.html); return; }
-      res.writeHead(result.error ? 404 : 200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+      const status = result.error ? 404 : (url.pathname === '/api/ready' && result.ready === false ? 503 : 200);
+      res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(JSON.stringify(result));
       return;
     }

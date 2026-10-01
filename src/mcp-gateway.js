@@ -32,9 +32,11 @@ export function createMCPGateway(options = {}) {
   const killReason = { value: options.killReason || 'Emergency security lock' };
   const maxRuns = Number(options.maxRuns || 25000);
   let retentionWarned = false;
-  const runStore = options.runStore || (options.persistence ? createPersistentRunStore({ filePath: options.runPersistence || `${options.persistence}/runs.json`, limit: maxRuns }) : null);
+  const recoverFromCorruption = Boolean(options.recoverFromCorruption);
+  const onPersistenceCorruption = options.onPersistenceCorruption;
+  const runStore = options.runStore || (options.persistence ? createPersistentRunStore({ filePath: options.runPersistence || `${options.persistence}/runs.json`, limit: maxRuns, recoverFromCorruption, onCorruption: onPersistenceCorruption }) : null);
   const runs = runStore ? null : [];
-  const approvals = createApprovalStore({ store: options.approvalStore || (options.persistence ? createPersistentApprovalStore({ filePath: options.approvalPersistence || `${options.persistence}/approvals.json`, limit: options.maxApprovals || maxRuns }) : undefined), limit: options.maxApprovals || maxRuns });
+  const approvals = createApprovalStore({ store: options.approvalStore || (options.persistence ? createPersistentApprovalStore({ filePath: options.approvalPersistence || `${options.persistence}/approvals.json`, limit: options.maxApprovals || maxRuns, recoverFromCorruption, onCorruption: onPersistenceCorruption }) : undefined), limit: options.maxApprovals || maxRuns });
   const eventBus = options.eventBus || createEventBus();
   const telemetry = options.telemetry || createTelemetry();
   const egressGuard = options.egressGuard || (options.egress ? createEgressGuard(options.egress === true ? {} : options.egress) : null);
@@ -73,6 +75,15 @@ export function createMCPGateway(options = {}) {
       const count = runStore ? runStore.list().length : runs.length;
       const nearLimit = count >= Math.max(1, Math.ceil(maxRuns * 0.9));
       return { count, limit: maxRuns, nearLimit, persistent: Boolean(runStore), truncated: count >= maxRuns };
+    },
+    // Reports whether persistence had to recover from corruption at startup
+    // (only possible when recoverFromCorruption: true was passed — otherwise
+    // corruption makes createMCPGateway() throw instead of starting up in a
+    // degraded state). Control planes/readiness probes should surface this
+    // rather than reporting healthy while sitting on recovered/lost data.
+    persistenceHealth: () => {
+      const corruptions = [runStore?.corruption, approvals?.corruption].filter(Boolean);
+      return { persistent: Boolean(runStore), degraded: corruptions.length > 0, corruptions };
     }
   };
 

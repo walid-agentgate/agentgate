@@ -24,18 +24,6 @@ Useful control-plane endpoints include `/api/observability`, `/api/trace?runId=.
 
 **Observe → Attack → Enforce → Replay → Report → Govern**
 
-### Quickstart
-
-```bash
-npm install agentgate-runtime-control
-npx agentgate init          # writes agentgate.config.mjs — tells you to run doctor next
-npx agentgate doctor        # checks your config, warns loudly if you're still in observe mode,
-                             # then tells you to open examples/protect-first-tool.mjs next
-node examples/protect-first-tool.mjs   # see a real tool protected end-to-end
-npx agentgate attack --config ./agentgate.config.mjs   # attack-test YOUR policy, not the defaults
-```
-
-Each command prints what to run next, so you don't have to remember this sequence.
 
 ## Design Partner Edition
 
@@ -81,10 +69,6 @@ The config file must export an `agentgate` object created with `createAgentGate(
 ## Production readiness
 
 See [`docs/production-readiness.md`](docs/production-readiness.md), [`docs/production-deployment.md`](docs/production-deployment.md), and [`docs/release-checklist.md`](docs/release-checklist.md) for deployment, operational, performance, and release gates.
-
-### About `npm test` on the installed package
-
-Running `npm test` inside an **installed** copy of `agentgate-runtime-control` (i.e. from `node_modules`) reports `0 tests` — that's expected, not a bug: the `test/` directory is intentionally not published to npm (see `files` in `package.json`), the same way most published packages don't ship their own test suite to consumers. The real suite (150+ cases, covering policy decisions, the approval lifecycle — including concurrent approve/deny and TTL expiry — attack-lab scenarios, egress guarding, multi-tenant isolation, and more) lives in and runs from the [source repository](https://github.com/walid-agentgate/agentgate) via `node --test`.
 
 ## Security
 
@@ -175,30 +159,11 @@ console.table(runAttackLab({ productionBlock: true }));
 
 The built-in lab covers prompt injection, privilege escalation, destructive actions, high-value refunds, and unsafe tool chaining. It is a testing aid, not a guarantee of security.
 
-### Deep Attack Lab — the unrecognized-action-name gap
-
-The 5 built-in cases above all use action names the policy engine already classifies (`export_all`, `update_production`, `delete`, `refund`, `publish`). A second, larger set specifically attacks action names it does **not** classify — the `unknownActionPolicy` gap described above — plus two "name evasion" cases (the same dangerous action called under a name that isn't in your `blockActions`/`approvalActions`):
-
-```bash
-agentgate attack --deep                       # against built-in default policies
-agentgate attack --deep --config ./agentgate.config.mjs   # against YOUR policy
-```
-
-or programmatically:
-
-```js
-import { runDeepAttackLab, DEEP_ATTACK_CASES } from 'agentgate-runtime-control';
-const results = await runDeepAttackLab(gateway);
-```
-
-Under the historical default (`unknownActionPolicy: 'allow'`), most of these legitimately ALLOW — that's the point, and CI should treat that as a finding rather than a passing baseline for anything reachable in production. Set `unknownActionPolicy: 'ask'` or `'block'` and re-run to confirm the gap is closed for your own policy.
-
 ## CLI
 
 ```bash
 agentgate test refund 1200
 agentgate attack
-agentgate attack --deep
 ```
 
 ## MCP Gateway
@@ -262,26 +227,6 @@ const nextPolicy = mergePolicies(currentPolicy, generated.policy);
 
 Policy generation is deterministic and reviewable. Generated suggestions do not automatically authorize or block traffic until the resulting policy is explicitly applied to a gateway.
 
-### `unknownActionPolicy` — what happens to action names AgentGate doesn't recognize
-
-The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — does not match any rule and falls through to `ALLOW` by default.** This is a real gap, not a corner case: it means adding a new tool with an unrecognized action name silently gets no protection at all unless you've explicitly listed it in `approvalActions`/`blockActions`.
-
-`policies.unknownActionPolicy` controls that fallback:
-
-```js
-policies: {
-  // 'allow' (default, kept for backward compatibility): unrecognized actions
-  //         pass through untouched, exactly as AgentGate has always done.
-  // 'ask':   unrecognized actions require human approval — the recommended
-  //          starting point; `agentgate init` sets this for new projects.
-  // 'block': unrecognized actions are refused outright — the strictest,
-  //          deny-by-default option, once every legitimate action name in
-  //          your system has been classified.
-  unknownActionPolicy: 'ask'
-}
-```
-
-`agentgate doctor` warns loudly whenever the effective setting is `'allow'`, so this is never a silent gap in a project that runs `doctor` as part of its setup. `examples/protect-first-tool.mjs` demonstrates the gap and the fix side by side with a `grant_admin` call.
 
 ## Approval Flow
 
@@ -312,26 +257,6 @@ Approval state is queryable through `gateway.approvals()` and JSON-RPC methods:
 - `agentgate/approvals/deny`
 
 The approval layer is intentionally separate from policy evaluation: policy decides `ALLOW`, `ASK`, or `BLOCK`; approval resolves only the `ASK` path.
-
-### Approval lifecycle — who, when, expiry, single-use, revocation
-
-- **Who approved / denied, and when**: every approval record carries `createdAt`, `resolvedAt`, and (for a deny) a `resolutionReason`. The run record (`gateway.replay(runId)`) links back to the approval via `approvalId` and stores the same `approval` block for audit export (`gateway.replay()` / `/api/audit/export`). AgentGate itself doesn't have a user identity system, so "who" is whatever identity your own auth layer attaches to the request that calls `approve()`/`deny()` — log that at your call site if you need a named approver.
-- **Expiry (TTL)**: a pending approval expires automatically after **15 minutes** by default (`DEFAULT_APPROVAL_TTL_MS` in `src/approval.js`). Pass `approvalTTLMs` to `createRuntime`/`createAgentGate`/`createMCPGateway` to change it, or `ttlMs: null` on a specific request to disable expiry. Once `expiresAt` passes, the approval flips to `status: 'expired'` the next time it's looked at (list/get/approve/deny), and the original tool call can never be executed late.
-- **Single-use guarantee**: `approve()`/`deny()` are synchronous up to the point where they flip `status` away from `pending` — there is no `await` in between the status check and the status write. Because Node runs JS on a single thread, two calls racing to resolve the same approval (concurrent HTTP requests, a double click, a retried request) can never both see `pending`: the second call always sees the already-resolved status and is rejected with `Approval is already <status>`. There is nothing else to configure for this — it's guaranteed by construction, not by a lock.
-- **Revocation**: there's no separate "revoke" verb — deny a still-pending approval with `gateway.deny(approvalId, reason)` (or `agentgate approval deny <id> <reason>` from the CLI) to take it off the table before anyone acts on it.
-- **Duplicate requests**: each call to a protected tool creates its own approval with its own id — AgentGate does not de-duplicate identical-looking requests. If your agent might retry the same call, treat that as your integration's concern (e.g. an idempotency key on your own tool handler).
-
-### Approval CLI
-
-Once a gateway or control plane is running (for example via `agentgate dev`), you can list and resolve approvals from the command line instead of writing HTTP calls by hand:
-
-```
-agentgate approval list [--status pending|approved|denied|expired] [--url <url>]
-agentgate approval approve <approvalId> [--url <url>] [--key <apiKey>]
-agentgate approval deny <approvalId> [reason] [--url <url>] [--key <apiKey>]
-```
-
-By default it talks to `http://localhost:8787` (what `agentgate dev` uses) and, if no `--key`/`AGENTGATE_API_KEY` is given, it automatically picks up the local dev session the same way opening the dashboard in a browser would — no extra setup needed for local testing. Point `--url` at a different host/port for a control plane running elsewhere, and pass `--key` (or set `AGENTGATE_API_KEY`) when auth is required outside local dev.
 
 ## v1.1 — Developer Integration
 
