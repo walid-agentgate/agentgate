@@ -36,6 +36,26 @@ export function evaluate(input = {}, policies = {}) {
   if (destructive.has(action) && policies.requireApprovalForDestructive !== false) {
     return decision('ASK', 'Destructive action requires approval', 75, { ruleTrace: [...trace, { id: 'destructive-approval', matched: true, decision: 'ASK', reason: 'Destructive action requires approval' }], winningRule: 'destructive-approval' });
   }
+  // The action name didn't match anything above: it isn't in the small
+  // built-in destructive/read-only lists, and no explicit policy
+  // (blockActions/approvalActions/amount rule) named it. That does NOT mean
+  // it's safe — a tool or integration can use any action name it likes
+  // ('grant_admin', 'drop_database', 'transfer_money', ...). `unknownActionPolicy`
+  // controls what happens to it:
+  //   - 'allow' (default, for backward compatibility): let it through, same
+  //     as AgentGate has always done. `agentgate doctor` warns loudly when
+  //     this is the effective setting so it's never a silent gap.
+  //   - 'ask': require human approval for anything unrecognized.
+  //   - 'block': refuse anything unrecognized outright — the strictest,
+  //     deny-by-default option, recommended for production once every
+  //     legitimate action name has been classified.
+  const unknownActionPolicy = policies.unknownActionPolicy || 'allow';
+  if (unknownActionPolicy === 'block') {
+    return decision('BLOCK', 'Unrecognized action blocked by unknownActionPolicy', 88, { ruleTrace: [...trace, { id: 'unknown-action-block', matched: true, decision: 'BLOCK', reason: 'Unrecognized action blocked by unknownActionPolicy' }], winningRule: 'unknown-action-block' });
+  }
+  if (unknownActionPolicy === 'ask') {
+    return decision('ASK', 'Unrecognized action requires approval by unknownActionPolicy', 68, { ruleTrace: [...trace, { id: 'unknown-action-ask', matched: true, decision: 'ASK', reason: 'Unrecognized action requires approval by unknownActionPolicy' }], winningRule: 'unknown-action-ask' });
+  }
   return decision('ALLOW', 'No blocking policy matched', 10, { ruleTrace: [...trace, { id: 'default-allow', matched: true, decision: 'ALLOW', reason: 'No blocking policy matched' }], winningRule: 'default-allow' });
 }
 

@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { evaluate } from '../src/policy-engine.js';
 import { createAgentGate } from '../src/agentgate.js';
 import { createControlPlane } from '../src/control-plane.js';
-import { runGatewayAttackLab, summarizeAttackResults } from '../src/attack-lab.js';
+import { runGatewayAttackLab, runDeepAttackLab, summarizeAttackResults } from '../src/attack-lab.js';
 import { createMCPGateway } from '../src/mcp-gateway.js';
 import { generateSecurityReport, renderSecurityReportHTML } from '../src/security-report.js';
 import { createPolicyRegistry } from '../src/policy-registry.js';
@@ -28,8 +28,8 @@ Usage:
   agentgate init
   agentgate dev [--port <port>]
   agentgate test <action> [amount]
-  agentgate attack
-  agentgate attack-ci
+  agentgate attack [--config <path>] [--deep]
+  agentgate attack-ci [--deep]
   agentgate report
   agentgate scan <tools.json> [--strict]
   agentgate egress <response.json> [--strict]
@@ -119,6 +119,10 @@ export { pack };
   if (config.mode === 'observe') {
     console.error('\n⚠️  WARNING: mode is "observe". Decisions are being recorded but NOTHING is actually blocked or held for approval yet — destructive tools will still execute. Set mode: \'enforce\' in agentgate.config.mjs once you are ready to protect real tools.');
   }
+  const effectiveUnknownActionPolicy = config.policies?.unknownActionPolicy || 'allow';
+  if (effectiveUnknownActionPolicy === 'allow') {
+    console.error('\n⚠️  WARNING: policies.unknownActionPolicy is "allow" (the default). Any action name AgentGate does not recognize — a typo, a new tool, something like "grant_admin" or "drop_database" — is ALLOWED through, not blocked or asked. Set policies.unknownActionPolicy: \'ask\' (or \'block\' for the strictest, deny-by-default behavior) in agentgate.config.mjs before treating this as production-safe.');
+  }
   if (report.ok) {
     console.error('\nNext: protect your first tool — see examples/protect-first-tool.mjs for a worked example (read/delete/refund/export), or run `agentgate attack --config agentgate.config.mjs` to test your policy against the built-in attack scenarios.');
   } else {
@@ -194,19 +198,35 @@ export { pack };
     if (process.argv.includes('--strict') && result.action === 'BLOCK') process.exitCode = 2;
   }
 } else if (cmd === 'attack-ci') {
-  const gateway = createMCPGateway({ mode:'enforce', policies:{productionBlock:true}, tools:[{name:'export_all',handler:async()=>({})},{name:'update_production',handler:async()=>({})},{name:'delete',handler:async()=>({})},{name:'refund',handler:async()=>({})},{name:'publish',handler:async()=>({})}] });
-  const results=await runGatewayAttackLab(gateway); const summary=summarizeAttackResults(results); console.log(JSON.stringify({summary,results},null,2)); process.exitCode=summary.failed?2:0;
+  const deep = process.argv.includes('--deep');
+  const gateway = createMCPGateway({ mode:'enforce', policies:{productionBlock:true}, tools:[{name:'export_all',handler:async()=>({})},{name:'update_production',handler:async()=>({})},{name:'delete',handler:async()=>({})},{name:'refund',handler:async()=>({})},{name:'publish',handler:async()=>({})},{name:'grant_admin',handler:async()=>({})},{name:'read_secrets',handler:async()=>({})},{name:'drop_database',handler:async()=>({})},{name:'modify_billing',handler:async()=>({})},{name:'transfer_money',handler:async()=>({})},{name:'disable_security_controls',handler:async()=>({})},{name:'purge_records',handler:async()=>({})},{name:'impersonate_user',handler:async()=>({})},{name:'remove_customer',handler:async()=>({})},{name:'export_data',handler:async()=>({})}] });
+  const results = deep ? await runDeepAttackLab(gateway) : await runGatewayAttackLab(gateway);
+  const summary=summarizeAttackResults(results); console.log(JSON.stringify({summary,results},null,2)); process.exitCode=summary.failed?2:0;
 } else if (cmd === 'test' || cmd === 'check') {
   console.log(JSON.stringify(evaluate({ action, amount: Number(amount) }), null, 2));
 } else if (cmd === 'attack') {
   const configIndex = process.argv.indexOf('--config');
   const configPath = configIndex >= 0 ? process.argv[configIndex + 1] : null;
+  const deep = process.argv.includes('--deep');
   const defaultTools = [
     { name: 'export_all', handler: async () => ({ executed: true }) },
     { name: 'update_production', handler: async () => ({ executed: true }) },
     { name: 'delete', handler: async () => ({ executed: true }) },
     { name: 'refund', handler: async args => ({ refunded: args.amount }) },
-    { name: 'publish', handler: async () => ({ executed: true }) }
+    { name: 'publish', handler: async () => ({ executed: true }) },
+    // Tools for the deeper, "unrecognized action name" attack set
+    // (`--deep`). Harmless no-op handlers — the point is to see what the
+    // POLICY decides, not to actually grant admin or drop a database.
+    { name: 'grant_admin', handler: async () => ({ executed: true }) },
+    { name: 'read_secrets', handler: async () => ({ executed: true }) },
+    { name: 'drop_database', handler: async () => ({ executed: true }) },
+    { name: 'modify_billing', handler: async () => ({ executed: true }) },
+    { name: 'transfer_money', handler: async args => ({ transferred: args.amount }) },
+    { name: 'disable_security_controls', handler: async () => ({ executed: true }) },
+    { name: 'purge_records', handler: async () => ({ executed: true }) },
+    { name: 'impersonate_user', handler: async () => ({ executed: true }) },
+    { name: 'remove_customer', handler: async () => ({ executed: true }) },
+    { name: 'export_data', handler: async () => ({ executed: true }) }
   ];
   let gateway = null;
   let label = 'built-in default policies';
@@ -228,11 +248,14 @@ export { pack };
   if (!gateway) {
     gateway = createMCPGateway({ mode: 'enforce', policies: { productionBlock: true }, tools: defaultTools });
   }
-  const results = await runGatewayAttackLab(gateway);
+  const results = deep ? await runDeepAttackLab(gateway) : await runGatewayAttackLab(gateway);
   const summary = summarizeAttackResults(results);
-  console.log(`\nAgentGate Attack Runner — testing against ${label}`);
+  console.log(`\nAgentGate Attack Runner${deep ? ' (deep: unrecognized-action-name scenarios)' : ''} — testing against ${label}`);
   console.table(results.map(x => ({ test: x.name, decision: x.decision, risk: x.risk, passed: x.passed, runId: x.runId })));
   console.log('Summary:', JSON.stringify(summary));
+  if (deep && summary.allowed > 0) {
+    console.error(`\n${summary.allowed} unrecognized action(s) ALLOWed through untouched. If that's not intended, set policies.unknownActionPolicy: 'ask' or 'block'.`);
+  }
   process.exitCode = summary.failed ? 2 : 0;
 } else if (cmd === 'report') {
   const gateway = createMCPGateway({
@@ -298,8 +321,8 @@ export { pack };
   else {
     const file = path.resolve(process.cwd(), 'agentgate.config.mjs');
     const content = pack
-      ? `import { createAgentGate, getPolicyPack } from 'agentgate-runtime-control';\n\nconst pack = getPolicyPack('${pack.id}');\n\nexport const agentgate = createAgentGate({\n  agent: 'SupportAgent',\n  mode: 'observe',\n  policies: pack.policies\n});\n\nexport { pack };\n`
-      : `import { createAgentGate } from 'agentgate-runtime-control';\n\nexport const agentgate = createAgentGate({\n  agent: 'MyAgent',\n  mode: 'enforce',\n  policies: {\n    productionBlock: true,\n    autoApproveAmount: 500,\n    approvalAmount: 5000\n  }\n});\n`;
+      ? `import { createAgentGate, getPolicyPack } from 'agentgate-runtime-control';\n\nconst pack = getPolicyPack('${pack.id}');\n\nexport const agentgate = createAgentGate({\n  agent: 'SupportAgent',\n  mode: 'observe',\n  policies: {\n    ...pack.policies,\n    // Any action name AgentGate doesn't recognize (a typo, a new tool, a\n    // third-party integration using its own action names) is asked about\n    // by default here, rather than silently allowed through. Set to\n    // 'block' once you've classified every legitimate action name.\n    unknownActionPolicy: 'ask'\n  }\n});\n\nexport { pack };\n`
+      : `import { createAgentGate } from 'agentgate-runtime-control';\n\nexport const agentgate = createAgentGate({\n  agent: 'MyAgent',\n  mode: 'enforce',\n  policies: {\n    productionBlock: true,\n    autoApproveAmount: 500,\n    approvalAmount: 5000,\n    // Any action name AgentGate doesn't recognize (a typo, a new tool, a\n    // third-party integration using its own action names) is asked about\n    // by default here, rather than silently allowed through. Set to\n    // 'block' once you've classified every legitimate action name, or back\n    // to 'allow' only if you understand and accept that gap.\n    unknownActionPolicy: 'ask'\n  }\n});\n`;
     try { await fs.access(file); console.error('agentgate.config.mjs already exists'); process.exitCode = 1; }
     catch {
       await fs.writeFile(file, content, 'utf8');

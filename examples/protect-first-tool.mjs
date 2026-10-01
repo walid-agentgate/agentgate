@@ -81,3 +81,34 @@ await tryCall('export_all', protectedExportAll, { environment: env });
 
 console.log('\nNothing above BLOCK or pending ASK ever reached its real handler.');
 console.log('See gate.approvals() to review and approve pending ASK requests.');
+
+// --- The gap `unknownActionPolicy` closes ---
+//
+// AgentGate only recognizes a small built-in list of "destructive" action
+// names (delete, refund, publish, deploy, export_all, update_production).
+// A tool using ANY other action name — a typo, a new tool, a third-party
+// integration's own naming — falls through every rule above and is
+// ALLOWED by default. That is not a bug in the rules you just saw; it's
+// the deliberate (but risky) default, so watch what happens to an
+// unclassified but obviously dangerous-sounding action name:
+async function grantAdmin({ userId }) { return { granted: userId }; }
+const looseGate = gate; // same gate as above — policies do NOT set unknownActionPolicy
+const protectedGrantAdminLoose = looseGate.protect(grantAdmin, { tool: 'grant_admin', action: 'grant_admin' });
+await tryCall('grant_admin (default)', protectedGrantAdminLoose, { userId: 'u_1', environment: env });
+console.log('^ That ALLOWed by default — AgentGate has never seen this action name before.\n');
+
+// Fix it by setting unknownActionPolicy: 'ask' (or 'block') on the gate:
+const strictGate = createAgentGate({
+  agent: 'SupportAgent',
+  mode: 'enforce',
+  policies: {
+    productionBlock: true,
+    approvalAmount: 5000,
+    blockActions: ['export_all'],
+    unknownActionPolicy: 'ask' // <- the fix: unrecognized actions now ASK instead of ALLOW
+  }
+});
+const protectedGrantAdminStrict = strictGate.protect(grantAdmin, { tool: 'grant_admin', action: 'grant_admin' });
+await tryCall('grant_admin (unknownActionPolicy: ask)', protectedGrantAdminStrict, { userId: 'u_1', environment: env });
+console.log('^ Same unrecognized action, now held for approval instead of silently executing.');
+console.log('`agentgate doctor` warns loudly whenever unknownActionPolicy is left at its default.');

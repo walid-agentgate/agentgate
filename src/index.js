@@ -1,7 +1,7 @@
 export { evaluate, protect, DECISIONS } from './policy-engine.js';
 export { createMiddleware } from './middleware.js';
 export { createRuntime, RunStore } from './runtime.js';
-export { runAttackLab, runGatewayAttackLab, summarizeAttackResults, ATTACK_CASES } from './attack-lab.js';
+export { runAttackLab, runGatewayAttackLab, runDeepAttackLab, summarizeAttackResults, ATTACK_CASES, DEEP_ATTACK_CASES } from './attack-lab.js';
 
 export { createMCPGateway, createMCPGatewayServer, MCP_PROTOCOL_VERSION } from './mcp-gateway.js';
 

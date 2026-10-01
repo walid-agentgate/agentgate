@@ -175,11 +175,30 @@ console.table(runAttackLab({ productionBlock: true }));
 
 The built-in lab covers prompt injection, privilege escalation, destructive actions, high-value refunds, and unsafe tool chaining. It is a testing aid, not a guarantee of security.
 
+### Deep Attack Lab — the unrecognized-action-name gap
+
+The 5 built-in cases above all use action names the policy engine already classifies (`export_all`, `update_production`, `delete`, `refund`, `publish`). A second, larger set specifically attacks action names it does **not** classify — the `unknownActionPolicy` gap described above — plus two "name evasion" cases (the same dangerous action called under a name that isn't in your `blockActions`/`approvalActions`):
+
+```bash
+agentgate attack --deep                       # against built-in default policies
+agentgate attack --deep --config ./agentgate.config.mjs   # against YOUR policy
+```
+
+or programmatically:
+
+```js
+import { runDeepAttackLab, DEEP_ATTACK_CASES } from 'agentgate-runtime-control';
+const results = await runDeepAttackLab(gateway);
+```
+
+Under the historical default (`unknownActionPolicy: 'allow'`), most of these legitimately ALLOW — that's the point, and CI should treat that as a finding rather than a passing baseline for anything reachable in production. Set `unknownActionPolicy: 'ask'` or `'block'` and re-run to confirm the gap is closed for your own policy.
+
 ## CLI
 
 ```bash
 agentgate test refund 1200
 agentgate attack
+agentgate attack --deep
 ```
 
 ## MCP Gateway
@@ -243,6 +262,26 @@ const nextPolicy = mergePolicies(currentPolicy, generated.policy);
 
 Policy generation is deterministic and reviewable. Generated suggestions do not automatically authorize or block traffic until the resulting policy is explicitly applied to a gateway.
 
+### `unknownActionPolicy` — what happens to action names AgentGate doesn't recognize
+
+The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — does not match any rule and falls through to `ALLOW` by default.** This is a real gap, not a corner case: it means adding a new tool with an unrecognized action name silently gets no protection at all unless you've explicitly listed it in `approvalActions`/`blockActions`.
+
+`policies.unknownActionPolicy` controls that fallback:
+
+```js
+policies: {
+  // 'allow' (default, kept for backward compatibility): unrecognized actions
+  //         pass through untouched, exactly as AgentGate has always done.
+  // 'ask':   unrecognized actions require human approval — the recommended
+  //          starting point; `agentgate init` sets this for new projects.
+  // 'block': unrecognized actions are refused outright — the strictest,
+  //          deny-by-default option, once every legitimate action name in
+  //          your system has been classified.
+  unknownActionPolicy: 'ask'
+}
+```
+
+`agentgate doctor` warns loudly whenever the effective setting is `'allow'`, so this is never a silent gap in a project that runs `doctor` as part of its setup. `examples/protect-first-tool.mjs` demonstrates the gap and the fix side by side with a `grant_admin` call.
 
 ## Approval Flow
 
