@@ -24,6 +24,13 @@ export class PersistentCollectionStore {
     // true). When this is non-null, the in-memory collection was reset and
     // whatever was in the corrupt file was NOT recovered automatically.
     this.corruption = null;
+    // Set when the most recent save() failed (disk full, permission denied,
+    // I/O error, ...) and cleared the moment a save() succeeds again. save()
+    // still throws on every failure — this never swallows the error — it's
+    // purely so a health check (persistenceHealth() / GET /api/ready) can
+    // see *and automatically stop reporting* a write failure without the
+    // caller having to wire that up itself.
+    this.lastWriteError = null;
     this.items = this.#load(seed);
   }
 
@@ -48,10 +55,16 @@ export class PersistentCollectionStore {
   }
   replace(items) { this.items = Array.isArray(items) ? items.slice(0, this.limit) : []; this.save(); return this.list(); }
   save() {
-    fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-    const temp = `${this.filePath}.tmp`;
-    fs.writeFileSync(temp, JSON.stringify(this.items, null, 2), 'utf8');
-    fs.renameSync(temp, this.filePath);
+    try {
+      fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
+      const temp = `${this.filePath}.tmp`;
+      fs.writeFileSync(temp, JSON.stringify(this.items, null, 2), 'utf8');
+      fs.renameSync(temp, this.filePath);
+      this.lastWriteError = null; // a later successful save clears any earlier failure automatically
+    } catch (err) {
+      this.lastWriteError = { message: err.message, code: err.code || null, at: new Date().toISOString() };
+      throw err; // still fails loudly — this record is for observability, not to mask the failure
+    }
   }
 
   #load(seed) {

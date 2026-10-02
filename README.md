@@ -560,6 +560,8 @@ createMCPGateway({
 
 With `recoverFromCorruption: true`, the corrupt file is renamed to `<file>.corrupt.<timestamp>` (never deleted) so it can be inspected, the collection starts from an empty/seed state, and the event is logged loudly to stderr and handed to `onPersistenceCorruption` if provided — it is never silently absorbed. `gateway.persistenceHealth()` and the Control Plane's `GET /api/ready` (which now returns `503` with `{ ready: false, persistence: { degraded: true, corruptions: [...] } }` in this state) let you alert on it rather than assume health.
 
+**Write failures (disk full, permission denied, etc.) — v2.14.1.** A write failure (e.g. `ENOSPC` when the disk is full, or `EACCES`) is never swallowed: `save()` still throws every time, exactly as before. What's new is observability: the failure is also recorded on `writeErrors` in `gateway.persistenceHealth()` — `{ persistent, degraded, corruptions, writeErrors }` — and reflected the same way a recovered corruption is: `GET /api/ready` returns `503` with `persistence.degraded: true` while a write is failing. The moment a later write succeeds (disk space freed, permissions fixed), the failure clears itself automatically — no restart, no manual reset. Separately, a write failure thrown inside an HTTP request handler (approve/deny/register, etc.) is caught and answered as a clean `500` for that one request; it can no longer become an unhandled promise rejection that takes down the whole control-plane process over a single failed write.
+
 ## Multi-Tenant Control Plane (v1.8)
 AgentGate v1.8 adds tenant isolation, scoped API keys, key rotation/revocation, and tenant-scoped webhook registrations.
 

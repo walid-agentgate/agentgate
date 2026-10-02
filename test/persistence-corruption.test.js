@@ -73,7 +73,7 @@ test('recoverFromCorruption: true quarantines the bad file and reports degraded 
 test('gateway.persistenceHealth() reports degraded after a recovered corruption, healthy otherwise', () => {
   const healthyDir = tmpDir();
   const healthyGateway = createMCPGateway({ persistence: healthyDir, tools: [{ name: 'refund', handler: async () => 'ok' }] });
-  assert.deepEqual(healthyGateway.persistenceHealth(), { persistent: true, degraded: false, corruptions: [] });
+  assert.deepEqual(healthyGateway.persistenceHealth(), { persistent: true, degraded: false, corruptions: [], writeErrors: [] });
 
   const corruptDir = tmpDir();
   fs.mkdirSync(corruptDir, { recursive: true });

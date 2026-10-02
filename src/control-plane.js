@@ -276,7 +276,24 @@ export function createControlPlane(options = {}) {
           return;
         }
       }
-      const result = await api(url.pathname, req.method, body, Object.fromEntries(url.searchParams.entries()), authContext);
+      // A handler can throw instead of returning an error shape — most
+      // notably a persistence write failure (disk full, permission denied)
+      // surfacing straight out of gateway.approve()/registerAgent()/etc. An
+      // uncaught throw inside this async request listener would otherwise
+      // become an unhandled rejection, which (depending on Node's
+      // unhandledRejection mode) can crash the *entire* process over one
+      // failed write — turning a single request's disk-full error into a
+      // full outage. Catch it here, answer that one request with 500, and
+      // keep the server serving every other request.
+      let result;
+      try {
+        result = await api(url.pathname, req.method, body, Object.fromEntries(url.searchParams.entries()), authContext);
+      } catch (error) {
+        console.error(`AgentGate control plane: unhandled error on ${req.method} ${url.pathname}:`, error);
+        res.writeHead(500, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+        res.end(JSON.stringify({ error: 'Internal error', message: error.message, code: error.code || null }));
+        return;
+      }
       if (result._html) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); res.end(result.html); return; }
       const status = result.error ? 404 : (url.pathname === '/api/ready' && result.ready === false ? 503 : 200);
       if (idempotencyKey) idempotencyPut(idempotencyKey, status, result);

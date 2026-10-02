@@ -1,3 +1,12 @@
+# 2.14.1 — Write-Failure Observability & Crash-Safety Hotfix
+
+- `PersistentCollectionStore.save()` still throws on every write failure (disk full, permission denied, ...) exactly as before — never swallowed — but now also records it on `lastWriteError`, which clears itself automatically the instant a later write succeeds.
+- `gateway.persistenceHealth()` gained `writeErrors` alongside the existing `corruptions`; `degraded` is now true if either is non-empty.
+- `GET /api/ready` now reflects an active write failure as `503`/`degraded: true`, the same way it already did for a recovered corruption, and recovers to `200`/`degraded: false` automatically once writes succeed again — no restart required.
+- Fixed a latent crash risk in the control plane: a write failure (or any other thrown error) inside an HTTP request handler was previously an unhandled promise rejection capable of taking down the entire process over a single failed write. It is now caught and answered as a clean `500` for that one request; every other in-flight and future request is unaffected.
+- Added `test/persistence-write-failure.test.js` covering all of the above.
+- Closes the two open questions and the latent risk flagged by the independent 2.14 verification report following up on the real disk-full test.
+
 # 2.13.8 — Production Readiness Pack
 # 2.13.8 — Security Hardening
 

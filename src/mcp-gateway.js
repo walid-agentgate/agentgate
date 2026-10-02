@@ -83,7 +83,15 @@ export function createMCPGateway(options = {}) {
     // rather than reporting healthy while sitting on recovered/lost data.
     persistenceHealth: () => {
       const corruptions = [runStore?.corruption, approvals?.corruption].filter(Boolean);
-      return { persistent: Boolean(runStore), degraded: corruptions.length > 0, corruptions };
+      // writeErrors reflects the LATEST save() outcome on each store — a
+      // disk-full/permission failure shows up here the moment it happens,
+      // and clears itself the moment a later save() succeeds (e.g. once
+      // space is freed), with no restart or manual reset needed.
+      const writeErrors = [
+        runStore?.lastWriteError ? { store: 'runs', ...runStore.lastWriteError } : null,
+        approvals?.lastWriteError ? { store: 'approvals', ...approvals.lastWriteError } : null
+      ].filter(Boolean);
+      return { persistent: Boolean(runStore), degraded: corruptions.length > 0 || writeErrors.length > 0, corruptions, writeErrors };
     }
   };
 
