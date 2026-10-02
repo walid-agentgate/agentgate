@@ -1,5 +1,41 @@
 [
   {
+    "id": "key_dc1b4592863d935a",
+    "tenantId": "ten_6e73c521d870760c",
+    "prefix": "ag_a9be07ee23",
+    "hash": "444e7c28ef253638b0ebf10593778ba5e741994fc380de87874b9019f31e313b",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-10-02T08:14:36.024Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_b84752d408f4fde3",
+    "tenantId": "ten_05445314d8a93843",
+    "prefix": "ag_28f76854b1",
+    "hash": "c75a3d9f067b8b16e0cc772b236bb04bfd22ebc49f238eaab60b6914250dcaa6",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-10-01T21:05:17.614Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
+    "id": "key_c80417465688dca3",
+    "tenantId": "ten_fcb41422bdc67d04",
+    "prefix": "ag_367c0f48f0",
+    "hash": "024148618f2c83eef55b0cca2f7435b7fa484a95f118f309c934e63e0a095eb1",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-10-01T20:54:07.147Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
     "id": "key_a252cc88c8273731",
     "tenantId": "ten_ffd84b73b934b464",
     "prefix": "ag_43cd78dd63",

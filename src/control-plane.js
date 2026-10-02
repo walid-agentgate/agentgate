@@ -67,6 +67,25 @@ export function createControlPlane(options = {}) {
   const limiter = options.rateLimiter || new SlidingWindowLimiter({ limit: options.rateLimit || 120, windowMs: options.rateWindowMs || 60000 });
   const tenantLimiter = options.tenantRateLimiter || new SlidingWindowLimiter({ limit: options.tenantRateLimit || options.rateLimit || 120, windowMs: options.rateWindowMs || 60000 });
   const startedAt = Date.now();
+  // Idempotency: a client that retries POST /api/approvals/approve|deny
+  // (timeout, connection reset, at-least-once delivery) must not trigger a
+  // second side effect. Scoped by tenant + path + the client-supplied
+  // Idempotency-Key so a retry with the same key gets back the exact same
+  // response instead of re-executing (or hitting "already approved").
+  const idempotencyTtlMs = Number(options.idempotencyTtlMs || 24 * 60 * 60 * 1000);
+  const idempotencyCache = new Map(); // scopedKey -> { status, result, expiresAt }
+  const IDEMPOTENT_PATHS = new Set(['/api/approvals/approve', '/api/approvals/deny']);
+  function idempotencyGet(key) {
+    if (!key) return null;
+    const entry = idempotencyCache.get(key);
+    if (!entry) return null;
+    if (entry.expiresAt < Date.now()) { idempotencyCache.delete(key); return null; }
+    return entry;
+  }
+  function idempotencyPut(key, status, result) {
+    if (!key) return;
+    idempotencyCache.set(key, { status, result, expiresAt: Date.now() + idempotencyTtlMs });
+  }
   const policyRegistry = options.policyRegistry || createPolicyRegistry({ filePath: options.policyPersistence || `${options.persistence || '.agentgate'}/policies.json` });
   const bundleRegistry = options.policyBundleRegistry || createPolicyBundleRegistry({ filePath: options.policyBundlePersistence || `${options.persistence || '.agentgate'}/policy-bundles.json` });
   const agents = agentStore || { items: [], add(a){ this.items.unshift(a); return a; }, list(filter){ const all=[...this.items]; return typeof filter==='function' ? all.filter(filter) : all; }, get(id){ return this.items.find(a=>a.id===id || a.name===id) || null; }, save(){} };
@@ -245,9 +264,22 @@ export function createControlPlane(options = {}) {
           if (!tenantRate.allowed) { res.writeHead(429, {'content-type':'application/json','cache-control':'no-store','retry-after':String(Math.ceil((Date.parse(tenantRate.resetAt)-Date.now())/1000))}); res.end(JSON.stringify({error:'Tenant rate limit exceeded', ...tenantRate})); return; }
         }
       }
+      const idempotencyHeader = req.headers['idempotency-key'];
+      const idempotencyKey = idempotencyHeader && IDEMPOTENT_PATHS.has(url.pathname)
+        ? `${authContext.tenantId || 'no-tenant'}:${url.pathname}:${idempotencyHeader}`
+        : null;
+      if (idempotencyKey) {
+        const cached = idempotencyGet(idempotencyKey);
+        if (cached) {
+          res.writeHead(cached.status, { 'content-type': 'application/json', 'cache-control': 'no-store', 'idempotency-replayed': 'true' });
+          res.end(JSON.stringify(cached.result));
+          return;
+        }
+      }
       const result = await api(url.pathname, req.method, body, Object.fromEntries(url.searchParams.entries()), authContext);
       if (result._html) { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' }); res.end(result.html); return; }
       const status = result.error ? 404 : (url.pathname === '/api/ready' && result.ready === false ? 503 : 200);
+      if (idempotencyKey) idempotencyPut(idempotencyKey, status, result);
       res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       res.end(JSON.stringify(result));
       return;

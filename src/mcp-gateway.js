@@ -111,7 +111,17 @@ export function createMCPGateway(options = {}) {
       name: tool.name,
       description: tool.description || '',
       inputSchema: tool.inputSchema || { type: 'object' },
-      handler: tool.handler
+      handler: tool.handler,
+      // Optional classification recorded at registration time, i.e. by
+      // whoever controls the tool list — not by whatever action name a
+      // caller's request happens to send. This is what makes it trustworthy:
+      // a caller can rename "remove_customer" to "delete" or to a brand-new
+      // string the policy engine has never seen, but it cannot edit this
+      // tool's registered metadata. See policy-engine.js's handling of
+      // request.toolMetadata for how this takes priority over name matching.
+      actionClass: tool.actionClass || null, // 'destructive' | 'readOnly' | null
+      requiresApproval: tool.requiresApproval === true,
+      environments: Array.isArray(tool.environments) ? tool.environments : null
     });
     return api;
   }
@@ -157,7 +167,12 @@ export function createMCPGateway(options = {}) {
       model: params.model || params.context?.model || input.model,
       usage: params.usage || params.context?.usage || input.usage,
       estimatedCost: params.estimatedCost ?? params.context?.estimatedCost ?? input.estimatedCost,
-      context: params.context || {}
+      context: params.context || {},
+      // The tool's own registered metadata (never caller-suppliable) — see
+      // registerTool() above and policy-engine.js's toolMetadata handling.
+      toolMetadata: (tool.actionClass || tool.requiresApproval || tool.environments)
+        ? { actionClass: tool.actionClass, requiresApproval: tool.requiresApproval, environments: tool.environments }
+        : null
     };
     if (killSwitch && mode === 'enforce') {
       const run = { id: randomUUID(), createdAt:new Date().toISOString(), tenantId:request.tenantId, request, decision:'BLOCK', risk:100, reason:killReason.value, mode, killed:true };

@@ -24,6 +24,18 @@ Useful control-plane endpoints include `/api/observability`, `/api/trace?runId=.
 
 **Observe → Attack → Enforce → Replay → Report → Govern**
 
+### Quickstart
+
+```bash
+npm install agentgate-runtime-control
+npx agentgate init          # writes agentgate.config.mjs — tells you to run doctor next
+npx agentgate doctor        # checks your config, warns loudly if you're still in observe mode,
+                             # then tells you to open examples/protect-first-tool.mjs next
+node examples/protect-first-tool.mjs   # see a real tool protected end-to-end
+npx agentgate attack --config ./agentgate.config.mjs   # attack-test YOUR policy, not the defaults
+```
+
+Each command prints what to run next, so you don't have to remember this sequence.
 
 ## Design Partner Edition
 
@@ -69,6 +81,10 @@ The config file must export an `agentgate` object created with `createAgentGate(
 ## Production readiness
 
 See [`docs/production-readiness.md`](docs/production-readiness.md), [`docs/production-deployment.md`](docs/production-deployment.md), and [`docs/release-checklist.md`](docs/release-checklist.md) for deployment, operational, performance, and release gates.
+
+### About `npm test` on the installed package
+
+Running `npm test` inside an **installed** copy of `agentgate-runtime-control` (i.e. from `node_modules`) reports `0 tests` — that's expected, not a bug: the `test/` directory is intentionally not published to npm (see `files` in `package.json`), the same way most published packages don't ship their own test suite to consumers. The real suite (150+ cases, covering policy decisions, the approval lifecycle — including concurrent approve/deny and TTL expiry — attack-lab scenarios, egress guarding, multi-tenant isolation, and more) lives in and runs from the [source repository](https://github.com/walid-agentgate/agentgate) via `node --test`.
 
 ## Security
 
@@ -159,11 +175,30 @@ console.table(runAttackLab({ productionBlock: true }));
 
 The built-in lab covers prompt injection, privilege escalation, destructive actions, high-value refunds, and unsafe tool chaining. It is a testing aid, not a guarantee of security.
 
+### Deep Attack Lab — the unrecognized-action-name gap
+
+The 5 built-in cases above all use action names the policy engine already classifies (`export_all`, `update_production`, `delete`, `refund`, `publish`). A second, larger set specifically attacks action names it does **not** classify — the `unknownActionPolicy` gap described above — plus two "name evasion" cases (the same dangerous action called under a name that isn't in your `blockActions`/`approvalActions`):
+
+```bash
+agentgate attack --deep                       # against built-in default policies
+agentgate attack --deep --config ./agentgate.config.mjs   # against YOUR policy
+```
+
+or programmatically:
+
+```js
+import { runDeepAttackLab, DEEP_ATTACK_CASES } from 'agentgate-runtime-control';
+const results = await runDeepAttackLab(gateway);
+```
+
+Under the historical default (`unknownActionPolicy: 'allow'`), most of these legitimately ALLOW — that's the point, and CI should treat that as a finding rather than a passing baseline for anything reachable in production. Set `unknownActionPolicy: 'ask'` or `'block'` and re-run to confirm the gap is closed for your own policy.
+
 ## CLI
 
 ```bash
 agentgate test refund 1200
 agentgate attack
+agentgate attack --deep
 ```
 
 ## MCP Gateway
@@ -227,6 +262,68 @@ const nextPolicy = mergePolicies(currentPolicy, generated.policy);
 
 Policy generation is deterministic and reviewable. Generated suggestions do not automatically authorize or block traffic until the resulting policy is explicitly applied to a gateway.
 
+### `unknownActionPolicy` — what happens to action names AgentGate doesn't recognize
+
+The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — does not match any rule and falls through to `ALLOW` by default.** This is a real gap, not a corner case: it means adding a new tool with an unrecognized action name silently gets no protection at all unless you've explicitly listed it in `approvalActions`/`blockActions`.
+
+`policies.unknownActionPolicy` controls that fallback:
+
+```js
+policies: {
+  // 'allow' (default, kept for backward compatibility): unrecognized actions
+  //         pass through untouched, exactly as AgentGate has always done.
+  // 'ask':   unrecognized actions require human approval — the recommended
+  //          starting point; `agentgate init` sets this for new projects.
+  // 'block': unrecognized actions are refused outright — the strictest,
+  //          deny-by-default option, once every legitimate action name in
+  //          your system has been classified.
+  unknownActionPolicy: 'ask'
+}
+```
+
+`agentgate doctor` warns loudly whenever the effective setting is `'allow'`, so this is never a silent gap in a project that runs `doctor` as part of its setup. `examples/protect-first-tool.mjs` demonstrates the gap and the fix side by side with a `grant_admin` call.
+
+## Closing the action-name evasion gap further (2.14)
+
+A follow-up adversarial test fed the policy engine action names it had never been designed to see: `delete\u0000all` (embedded NUL), `delete‮` (right-to-left override — makes the name *render* differently than it reads), `％ｅｘｐｏｒｔ` (fullwidth lookalikes of "export"), and `../delete` (path-traversal-shaped). None crashed anything, but all of them ALLOWed under the historical default, which is the real finding: a string-based classifier can always be fed a string it wasn't expecting.
+
+Three independent changes close this, and they compose with `unknownActionPolicy` above rather than replace it:
+
+**1. Unsafe action names are always rejected, unconditionally.** Control characters, bidi-override/zero-width characters, the fullwidth-forms block, and `../`-style path segments have no legitimate reason to appear in an action name, so this check is **not** an opt-in policy — it runs for every request, for every existing user, with no config needed:
+
+```text
+delete\u0000all   → BLOCK (winningRule: 'unsafe-action-name')
+delete‮      → BLOCK
+％ｅｘｐｏｒｔ        → BLOCK
+../delete         → BLOCK
+```
+
+**2. `policies.strictActionNames: true` (opt-in)** additionally requires every action name to match `^[a-z][a-z0-9_.:-]{0,63}$` — a plain lowercase identifier. This is off by default because it's a real behavior change for any system with mixed-case or unusually-shaped action names already in production; turn it on once you've audited your own action-name list.
+
+**3. Tool registration metadata is authoritative over the action name a caller sends.** The real fix for "call the dangerous tool under a name the policy engine doesn't recognize" isn't a better regex — it's not trusting the name at all for tools you control. `registerTool()` now accepts classification that lives with the tool, not with whatever the caller's request claims:
+
+```js
+gateway.registerTool({
+  name: 'remove_customer',
+  actionClass: 'destructive',      // or 'readOnly'
+  requiresApproval: true,
+  environments: ['development', 'staging'], // tool refuses to run outside these
+  handler: async (args) => { /* ... */ }
+});
+```
+
+A caller cannot edit another tool's registration, so `grant_admin` registered with `requiresApproval: true` still requires approval even if a request calls it with `action: 'totally_unrecognized_name'`. Metadata sits below your own explicit `blockActions`/`productionBlock`/amount/`approvalActions` rules (those still win) but above name-based classification and `unknownActionPolicy` — see `test/action-hardening-2.14.test.js` for the exact priority ordering.
+
+## Idempotent approval resolution (2.14)
+
+`POST /api/approvals/approve` and `POST /api/approvals/deny` accept an `Idempotency-Key` header. A retried request with the same key (same tenant, same path) gets back the **exact same response** instead of re-executing the handler or hitting an "already approved" error:
+
+```text
+POST /api/approvals/approve
+Idempotency-Key: approval_123:resolve:v1
+```
+
+Replayed responses carry an `Idempotency-Replayed: true` header. Keys are cached in memory per control-plane process for 24h by default (`idempotencyTtlMs` to override); a different key against the same approval is **not** treated as a replay and goes through normal single-use resolution. This matters for exactly the failure mode a retrying client hits in practice: a network blip after the first approve succeeded, followed by an automatic retry that must not double-execute a refund or a production change.
 
 ## Approval Flow
 
@@ -257,6 +354,26 @@ Approval state is queryable through `gateway.approvals()` and JSON-RPC methods:
 - `agentgate/approvals/deny`
 
 The approval layer is intentionally separate from policy evaluation: policy decides `ALLOW`, `ASK`, or `BLOCK`; approval resolves only the `ASK` path.
+
+### Approval lifecycle — who, when, expiry, single-use, revocation
+
+- **Who approved / denied, and when**: every approval record carries `createdAt`, `resolvedAt`, and (for a deny) a `resolutionReason`. The run record (`gateway.replay(runId)`) links back to the approval via `approvalId` and stores the same `approval` block for audit export (`gateway.replay()` / `/api/audit/export`). AgentGate itself doesn't have a user identity system, so "who" is whatever identity your own auth layer attaches to the request that calls `approve()`/`deny()` — log that at your call site if you need a named approver.
+- **Expiry (TTL)**: a pending approval expires automatically after **15 minutes** by default (`DEFAULT_APPROVAL_TTL_MS` in `src/approval.js`). Pass `approvalTTLMs` to `createRuntime`/`createAgentGate`/`createMCPGateway` to change it, or `ttlMs: null` on a specific request to disable expiry. Once `expiresAt` passes, the approval flips to `status: 'expired'` the next time it's looked at (list/get/approve/deny), and the original tool call can never be executed late.
+- **Single-use guarantee**: `approve()`/`deny()` are synchronous up to the point where they flip `status` away from `pending` — there is no `await` in between the status check and the status write. Because Node runs JS on a single thread, two calls racing to resolve the same approval (concurrent HTTP requests, a double click, a retried request) can never both see `pending`: the second call always sees the already-resolved status and is rejected with `Approval is already <status>`. There is nothing else to configure for this — it's guaranteed by construction, not by a lock.
+- **Revocation**: there's no separate "revoke" verb — deny a still-pending approval with `gateway.deny(approvalId, reason)` (or `agentgate approval deny <id> <reason>` from the CLI) to take it off the table before anyone acts on it.
+- **Duplicate requests**: each call to a protected tool creates its own approval with its own id — AgentGate does not de-duplicate identical-looking requests. If your agent might retry the same call, treat that as your integration's concern (e.g. an idempotency key on your own tool handler).
+
+### Approval CLI
+
+Once a gateway or control plane is running (for example via `agentgate dev`), you can list and resolve approvals from the command line instead of writing HTTP calls by hand:
+
+```
+agentgate approval list [--status pending|approved|denied|expired] [--url <url>]
+agentgate approval approve <approvalId> [--url <url>] [--key <apiKey>]
+agentgate approval deny <approvalId> [reason] [--url <url>] [--key <apiKey>]
+```
+
+By default it talks to `http://localhost:8787` (what `agentgate dev` uses) and, if no `--key`/`AGENTGATE_API_KEY` is given, it automatically picks up the local dev session the same way opening the dashboard in a browser would — no extra setup needed for local testing. Point `--url` at a different host/port for a control plane running elsewhere, and pass `--key` (or set `AGENTGATE_API_KEY`) when auth is required outside local dev.
 
 ## v1.1 — Developer Integration
 
@@ -421,6 +538,28 @@ AgentGate supports deterministic RBAC and ABAC authorization using agent/user id
 
 Runs, approvals, agents, and policy versions can be persisted locally through the built-in storage adapters. For production multi-tenant deployments, use the Postgres/Supabase adapters with tenant-scoped sessions and RLS; local JSON persistence is intended for development or single-process deployments. Storage is provider-neutral so a database adapter can be introduced without changing the policy API.
 
+### Persistence corruption is fail-closed, not silent (2.13.15+)
+
+An independent stress test of 2.13.14 found that writing garbage into `runs.json` or `approvals.json` and restarting made the server come up normally with an **empty collection** — no error, no alert. For `runs.json` that's a silently erased audit trail; for `approvals.json` it means a pending approval can vanish with no trace at all. That was a bug, not a resilience feature.
+
+As of 2.13.15, `PersistentCollectionStore` distinguishes three cases:
+
+- **File doesn't exist** (first run) — starts empty, as always. Not an error.
+- **File exists but isn't valid JSON, or isn't an array** — this is corruption. By default, the store throws `PersistenceCorruptionError` (`code: 'AGENTGATE_PERSISTENCE_CORRUPT'`) and refuses to start, so a corrupted security-relevant file is loud at startup instead of discovered later as a gap in the audit log.
+- **Any other read failure** (permission denied, disk I/O error) — also propagates as an error rather than being treated as "no data yet."
+
+Recovery is opt-in only, because silently discarding the operator's decision here is exactly the bug being fixed:
+
+```js
+createMCPGateway({
+  persistence: '.agentgate',
+  recoverFromCorruption: true,      // off by default — corruption throws unless you opt in
+  onPersistenceCorruption: (event) => { /* event.quarantinePath, event.filePath, ... */ }
+});
+```
+
+With `recoverFromCorruption: true`, the corrupt file is renamed to `<file>.corrupt.<timestamp>` (never deleted) so it can be inspected, the collection starts from an empty/seed state, and the event is logged loudly to stderr and handed to `onPersistenceCorruption` if provided — it is never silently absorbed. `gateway.persistenceHealth()` and the Control Plane's `GET /api/ready` (which now returns `503` with `{ ready: false, persistence: { degraded: true, corruptions: [...] } }` in this state) let you alert on it rather than assume health.
+
 ## Multi-Tenant Control Plane (v1.8)
 AgentGate v1.8 adds tenant isolation, scoped API keys, key rotation/revocation, and tenant-scoped webhook registrations.
 
@@ -468,8 +607,14 @@ For first-tenant bootstrap over HTTP, set `AGENTGATE_BOOTSTRAP_TOKEN` and send `
 - Deterministic authorization remains the security authority
 
 
+### Oversized request bodies no longer stall the next request (2.13.15+)
+
+A stress test found that a request body larger than `maxBodySize` correctly returned `413`, but the server stopped reading the body as soon as the limit was crossed without draining the rest of what the client was sending. On a keep-alive connection, those unread bytes were still arriving and got misread as the start of the *next* request, so a completely unrelated follow-up request (even an auth check with a fake key) could hang for the full request timeout instead of returning `401` quickly — a cheap way to tie up connections.
+
+2.13.15 fixes this by always fully draining the request body (even once it's known to be oversized — the rest is discarded, not buffered) before responding, and by sending `Connection: close` on `413`/`400` body-parsing errors so the client doesn't attempt to reuse a connection that was cut short either way. Regression tests in `test/oversized-body-recovery.test.js` repeat the exact sequence from the report (oversized request, then a fake-key request) and assert the follow-up never exceeds ~2s.
+
 ### Production Operations v2.1
-- `/api/health` and `/api/ready` health/readiness probes
+- `/api/health` and `/api/ready` health/readiness probes (`/api/ready` reports `503` and `persistence.degraded: true` if persistence was recovered from corruption — see Persistence above)
 - `/api/metrics` deterministic runtime counters and latency telemetry
 - `/api/events` Server-Sent Events stream for runtime events
 - Sliding-window HTTP rate limiting with 429 responses
