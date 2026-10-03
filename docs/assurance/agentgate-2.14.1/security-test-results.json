@@ -1,0 +1,60 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.1",
+  "generatedAt": "2026-10-03T00:00:00Z",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 194,
+    "pass": 192,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "attackLab": {
+    "builtIn": {
+      "command": "agentgate attack",
+      "policy": "built-in default policies",
+      "summary": { "total": 5, "passed": 5, "failed": 0, "blocked": 5, "approvalRequired": 0, "allowed": 0, "averageRisk": 91, "status": "PROTECTED" }
+    },
+    "deepUnrecognizedActionNames": {
+      "command": "agentgate attack --deep --config ./examples/production-strict-policy.mjs",
+      "policy": { "unknownActionPolicy": "block", "strictActionNames": true, "productionBlock": true },
+      "summary": { "total": 10, "passed": 10, "failed": 0, "blocked": 10, "approvalRequired": 0, "allowed": 0, "averageRisk": 88, "status": "PROTECTED" },
+      "note": "Under the historical default (unknownActionPolicy: 'allow'), 9 of these 10 ALLOW — this is expected backward-compatible behavior, not a regression. The strict config above is the recommended production baseline."
+    }
+  },
+  "p0FixesVerified": [
+    {
+      "id": "oversized-body-stalls-next-request",
+      "fixedIn": "2.13.15",
+      "verifiedBy": "independent stress-test report (second round)",
+      "result": "oversized body -> 413, immediately followed by a normal request -> correct status, no timeout"
+    },
+    {
+      "id": "persistence-corruption-silent-data-loss",
+      "fixedIn": "2.13.15",
+      "verifiedBy": "independent stress-test report (second round)",
+      "result": "corrupted runs.json / approvals.json now throws PersistenceCorruptionError and fails closed by default"
+    },
+    {
+      "id": "write-failure-not-reflected-in-readiness-and-process-crash-risk",
+      "fixedIn": "2.14.1",
+      "verifiedBy": "regression suite (test/persistence-write-failure.test.js, 4/4 passing)",
+      "result": "GET /api/ready reports 503/degraded during a write failure and recovers to 200 automatically once writes succeed again; a write failure inside an HTTP handler now returns 500 for that request instead of risking an unhandled-rejection process crash"
+    }
+  ],
+  "postgresLocal": {
+    "rls": "enabled and forced, cross-tenant write rejected with SQLSTATE 42501",
+    "optimisticConcurrency": "second concurrent writer receives 'Concurrent update detected'",
+    "backupRestoreMs": { "backup": 119, "restore": 73 },
+    "tls": "TLSv1.3, TLS_AES_256_GCM_SHA384 (local)",
+    "scope": "local PostgreSQL 16 only — managed provider not yet tested, see known-limitations.md"
+  },
+  "loadStress": {
+    "toolsCall": { "count": 5000, "throughputReqPerSec": 15587, "errors": 0 },
+    "approvals": { "count": 2000, "executed": 2000, "errors": 0 },
+    "scope": "sandbox / in-process, not a production SLA claim"
+  }
+}

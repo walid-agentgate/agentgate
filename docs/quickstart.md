@@ -99,6 +99,19 @@ This creates `agentgate.config.mjs` with a conservative production policy baseli
 
 AgentGate is a control layer, not a guarantee that an agent is safe. Test the actions and tools that matter to your application.
 
+## Recommended policy for a real trial
+
+Before pointing AgentGate at anything that matters, switch on the strict production baseline instead of relying on defaults kept for backward compatibility:
+
+```js
+createMCPGateway({
+  mode: 'enforce',
+  policies: { unknownActionPolicy: 'block', strictActionNames: true, productionBlock: true }
+});
+```
+
+and register every sensitive tool with real metadata (`actionClass`, `requiresApproval`, `environments`) instead of trusting the caller-supplied action-name string alone. See [`examples/production-strict-policy.mjs`](../examples/production-strict-policy.mjs) — run it with `agentgate attack --deep --config ./examples/production-strict-policy.mjs` to see it block 10/10 adversarial/unrecognized action names. Full rationale and what's still out of scope for a broad rollout: [`docs/validation-report.md`](validation-report.md) and [`docs/known-limitations.md`](known-limitations.md).
+
 
 ## Approval lifecycle for `createAgentGate`
 
