@@ -1,0 +1,26 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.3",
+  "generatedAt": "2026-10-04T00:00:00Z",
+  "note": "2.14.3 is a dashboard UX/labeling fix (standalone.html only, from a colleague's hands-on trial). No src/ runtime behavior changed from 2.14.2 — see security-test-results.json in docs/assurance/agentgate-2.14.1/ for the full P0/attack-lab/postgres/load evidence, which still applies unchanged.",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 194,
+    "pass": 192,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "releaseCheck": {
+    "command": "npm run release:check",
+    "result": "all 13 checks PASS, including standalone JS syntax"
+  },
+  "fixedThisRelease": [
+    "Create Policy / Test Policy: native prompt() dialogs replaced with an on-page modal form (pre-filled example policy/test cases)",
+    "Behavior, Blast Radius, Replay: added LIVE badge + differentiation note vs Attack Lab",
+    "Monitor header + approval toast: clarified demo tool handlers are no-ops",
+    "Cost Control: clear 'pricing not configured' message instead of misleading $0 tiles"
+  ]
+}

@@ -1,3 +1,12 @@
+# 2.14.3 — Dashboard UX Fixes (from a real colleague trial)
+
+- Replaced the raw browser `prompt()` dialogs for "Create Policy" and "Test Policy" with a proper on-page modal form (name field, pre-filled example policy `{refund:{max:5000}}`, pre-filled example test cases, inline error message, Cancel/Create or Cancel/Run buttons). The old `prompt()` flow could silently hang the page for a tester who didn't expect a native browser dialog — this was the one real blocker the trial found.
+- Added a "● LIVE" badge and a short differentiation line to the Behavior, Blast Radius, and Replay section headers, explaining how each one differs from Attack Lab and from each other, and that Attack-Lab-generated findings in Behavior are simulated test results, not real incidents.
+- Clarified in the Monitor section header, and in the toast shown after approving a request, that `agentgate dev`'s demo tool handlers are harmless no-ops — approving a refund/delete/export in the demo does not perform a real side effect.
+- Cost Control now shows one clear explanatory message ("cost tracking is not active yet — add pricing to see real numbers") instead of a row of `$0` stat tiles when no model pricing is configured, so a `$0` reading can no longer be mistaken for "spend is actually zero."
+- No runtime/security/policy behavior changed — this release only touches `standalone.html` (the dev dashboard's UI/labeling). Full regression suite: 194 tests, 192 passing (same 2 known Chromium-only browser-smoke failures, unrelated). `npm run release:check` passes all 13 checks.
+- Fixes all 5 recommendations from a colleague's hands-on trial of the live dashboard.
+
 # 2.14.2 — Release-Engineering Consistency Fix
 
 - Fixed stale "v2.13.8" version text in `README.md` (title and Design Partner Edition intro) and the `standalone.html` dashboard sidebar — both now correctly read `2.14.1`-era content matching `package.json`. (`bin/agentgate.js --version` was never affected; it already reads the version from `package.json` dynamically.)
