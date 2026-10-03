@@ -1,12 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { TenantRegistry } from '../src/multi-tenant.js';
 import { createAuthMiddleware, extractAPIKey } from '../src/auth.js';
 import { createWebhookDispatcher, signWebhook } from '../src/webhook-delivery.js';
 import { PostgresStoreAdapter, createSupabaseAdapter } from '../src/postgres-adapter.js';
 
+// Use a fresh temp directory instead of a hardcoded /tmp/... path — on some
+// systems (containers, Termux, Windows) a bare /tmp either doesn't exist or
+// isn't writable by the current user, which fails with ENOENT/EACCES before
+// the test logic even runs.
+const v19Dir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentgate-v19-'));
+
 test('auth middleware extracts bearer/key and enforces tenant scope',()=>{
- const r=new TenantRegistry({filePath:'/data/data/com.termux/files/home/tmp/ag19-t.json',keyPath:'/data/data/com.termux/files/home/tmp/ag19-k.json'}); const t=r.create('A'); const k=r.issueKey(t.id,{scopes:['runs:read']}); const auth=createAuthMiddleware({registry:r});
+ const r=new TenantRegistry({filePath:path.join(v19Dir,'ag19-t.json'),keyPath:path.join(v19Dir,'ag19-k.json')}); const t=r.create('A'); const k=r.issueKey(t.id,{scopes:['runs:read']}); const auth=createAuthMiddleware({registry:r});
  assert.equal(extractAPIKey({'authorization':`Bearer ${k.secret}`}),k.secret); assert.equal(auth({headers:{'x-agentgate-key':k.secret}},'/api/runs','runs:read').ok,true); assert.equal(auth({headers:{}},'/api/runs','runs:read').status,401); assert.equal(auth({headers:{'x-agentgate-key':k.secret}},'/api/policies/create','policies:write').status,403);
 });
 

@@ -1,13 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { TenantRegistry } from '../src/multi-tenant.js';
 import { createControlPlane } from '../src/control-plane.js';
 import { verifyOIDCJWT } from '../src/oidc.js';
 import { POSTGRES_SCHEMA, PostgresStoreAdapter } from '../src/postgres-adapter.js';
 
+// Fresh temp directory instead of hardcoded /tmp/... paths — a bare /tmp
+// isn't guaranteed to exist or be writable on every platform (containers,
+// Termux, Windows), which previously failed with ENOENT/EACCES.
+const hardeningDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agentgate-hardening-'));
+
 test('tenant API key revoke and rotate cannot cross tenant boundaries', () => {
-  const base = '/data/data/com.termux/files/home/tmp/ag26-keys';
+  const base = path.join(hardeningDir, 'ag26-keys');
   const r = new TenantRegistry({ filePath: `${base}-t.json`, keyPath: `${base}-k.json` });
   const a = r.create('A'); const b = r.create('B');
   const ka = r.issueKey(a.id, { scopes: ['admin:*'] });
@@ -20,9 +28,9 @@ test('tenant API key revoke and rotate cannot cross tenant boundaries', () => {
 });
 
 test('tenant rate limiting is enforced independently from network limits', async () => {
-  const r = new TenantRegistry({ filePath:'/data/data/com.termux/files/home/tmp/ag26-rt.json', keyPath:'/data/data/com.termux/files/home/tmp/ag26-rk.json' });
+  const r = new TenantRegistry({ filePath: path.join(hardeningDir, 'ag26-rt.json'), keyPath: path.join(hardeningDir, 'ag26-rk.json') });
   const t = r.create('A'); const k = r.issueKey(t.id, { scopes:['runs:read'] });
-  const cp = createControlPlane({ tenantRegistry:r, authRequired:true, rateLimit:100, tenantRateLimit:1, persistence:'/data/data/com.termux/files/home/tmp/ag26-cp' });
+  const cp = createControlPlane({ tenantRegistry:r, authRequired:true, rateLimit:100, tenantRateLimit:1, persistence: path.join(hardeningDir, 'ag26-cp') });
   await new Promise(resolve => cp.server.listen(0, resolve));
   const port = cp.server.address().port;
   try {

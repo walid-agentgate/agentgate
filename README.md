@@ -1,4 +1,4 @@
-# AgentGate v2.13.8 — First-Client Hardening
+# AgentGate v2.14.1 — First-Client Hardening
 
 **The runtime control plane for AI agents.**
 
@@ -39,7 +39,7 @@ Each command prints what to run next, so you don't have to remember this sequenc
 
 ## Design Partner Edition
 
-AgentGate 2.13.8 focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
+AgentGate 2.14.1 focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
 
 ```bash
 npm install agentgate-runtime-control

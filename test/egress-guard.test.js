@@ -94,7 +94,11 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 test('CLI egress command reports strict violations', async () => {
   const fs = await import('node:fs/promises');
-  const file = '/data/data/com.termux/files/home/tmp/agentgate-egress-test.json';
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const fsSync = await import('node:fs');
+  const dir = fsSync.mkdtempSync(path.join(os.tmpdir(), 'agentgate-egress-'));
+  const file = path.join(dir, 'agentgate-egress-test.json');
   await fs.writeFile(file, JSON.stringify({ token: 'sk-1234567890abcdef1234' }));
   await assert.rejects(async () => {
     await execFileAsync(process.execPath, ['bin/agentgate.js', 'egress', file, '--strict'], { cwd: new URL('..', import.meta.url).pathname });

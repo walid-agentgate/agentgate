@@ -1,3 +1,11 @@
+# 2.14.2 — Release-Engineering Consistency Fix
+
+- Fixed stale "v2.13.8" version text in `README.md` (title and Design Partner Edition intro) and the `standalone.html` dashboard sidebar — both now correctly read `2.14.1`-era content matching `package.json`. (`bin/agentgate.js --version` was never affected; it already reads the version from `package.json` dynamically.)
+- Fixed `npm run release:check` hardcoding a `2.13.x`-only version regex, which made it fail on every release past 2.13 for a reason unrelated to release quality. It now accepts any valid semver.
+- Fixed three test files (`test/v19.test.js`, `test/egress-guard.test.js`, `test/production-hardening.test.js`) that used hardcoded `/tmp/...` paths instead of `os.tmpdir()`/`fs.mkdtempSync` — these failed with `ENOENT`/`EACCES` on any system where a world-writable `/tmp` isn't already guaranteed to exist (seen on a plain Linux checkout during an independent trial review; the same class of issue affects Termux and Windows).
+- No runtime/security behavior changed. Full regression suite: 194 tests, 192 passing (2 known Chromium-only browser-smoke failures, unrelated). `npm run release:check` now passes all checks.
+- Added `docs/known-limitations.md` items 6–9 (Attack Lab is a verification tool not a guarantee, protection depends on correct tool registration, load numbers aren't a production SLA, backup/incident-response remain the operator's responsibility) making points an independent trial review raised explicit rather than implicit.
+
 # 2.14.1 — Write-Failure Observability & Crash-Safety Hotfix
 
 - `PersistentCollectionStore.save()` still throws on every write failure (disk full, permission denied, ...) exactly as before — never swallowed — but now also records it on `lastWriteError`, which clears itself automatically the instant a later write succeeds.

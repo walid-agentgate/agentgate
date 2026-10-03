@@ -1,0 +1,25 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.2",
+  "generatedAt": "2026-10-03T00:00:00Z",
+  "note": "2.14.2 is a release-engineering fix (version-text consistency, release-check regex, test /tmp path portability). No src/ runtime behavior changed from 2.14.1 — see security-test-results.json in docs/assurance/agentgate-2.14.1/ for the full P0/attack-lab/postgres/load evidence, which still applies unchanged.",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 194,
+    "pass": 192,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "releaseCheck": {
+    "command": "npm run release:check",
+    "result": "all 13 checks PASS (previously failed on 'package version' due to a hardcoded 2.13.x regex)"
+  },
+  "fixedThisRelease": [
+    "README.md and standalone.html stale 'v2.13.8' version text corrected to match package.json",
+    "scripts/release-check.mjs version check generalized from /^2\\.13\\.\\d+$/ to any valid semver",
+    "test/v19.test.js, test/egress-guard.test.js, test/production-hardening.test.js switched from hardcoded /tmp/... paths to os.tmpdir()/fs.mkdtempSync"
+  ]
+}

@@ -7,7 +7,11 @@ const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'))
 const failures = [];
 const ok = (name, condition, detail = '') => condition ? console.log(`PASS ${name}${detail ? ` — ${detail}` : ''}`) : failures.push(`${name}${detail ? ` — ${detail}` : ''}`);
 
-ok('package version', /^2\.13\.\d+$/.test(pkg.version), pkg.version);
+// Any valid semver, not a hardcoded major.minor series — pinning this to
+// e.g. /^2\.13\.\d+$/ makes release-check fail on every future release
+// (as it did going from 2.13.x to 2.14.x) for a reason that has nothing to
+// do with whether the release is actually clean.
+ok('package version', /^\d+\.\d+\.\d+$/.test(pkg.version), pkg.version);
 ok('standalone exists', fs.existsSync(path.join(root, 'standalone.html')));
 ok('production docs', ['production-deployment.md','production-quickstart.md','data-protection.md','incident-response.md','performance.md','performance-baseline.md','integration-matrix.md','threat-model.md','observability-alerting.md','production-readiness.md','external-security-review-test-pack.md','managed-postgres-acceptance-test.md'].every(f => fs.existsSync(path.join(root, 'docs', f))));
 ok('production compose', fs.existsSync(path.join(root, 'docker-compose.production.yml')));
