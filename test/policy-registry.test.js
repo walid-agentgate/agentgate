@@ -26,3 +26,17 @@ test('cannot activate untested draft',()=>{
   const r=createPolicyRegistry({filePath:path.join(dir,'policies.json')}); r.create('x',{});
   assert.throws(()=>r.activate('x',1),/pass tests/);
 });
+
+test('list() with no name returns every policy, not an empty list — regression for the dashboard "draft created but list stays empty" bug', () => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'agentgate-policy-'));
+  const r=createPolicyRegistry({filePath:path.join(dir,'policies.json')});
+  assert.deepEqual(r.list(), []);
+  r.create('refund-safety',{refund:{max:5000}});
+  r.create('export-guard',{export_all:{block:true}});
+  const all=r.list();
+  assert.equal(all.length,2);
+  assert.ok(all.some(p=>p.name==='refund-safety'));
+  assert.ok(all.some(p=>p.name==='export-guard'));
+  // list(name) still filters to just that policy's versions, unaffected by the fix
+  assert.equal(r.list('refund-safety').length,1);
+});

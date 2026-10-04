@@ -1,0 +1,26 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.4",
+  "generatedAt": "2026-10-04T09:00:00Z",
+  "note": "2.14.4 fixes a real bug in src/policy-registry.js (list() required an exact name to match anything, so the dashboard's 'list all policies' call always returned an empty array). This is a control-plane data-visibility fix, not just dashboard labeling, but it does not change policy evaluation, ALLOW/ASK/BLOCK decision logic, persistence format, or any other registry. See security-test-results.json in docs/assurance/agentgate-2.14.1/ for the full P0/attack-lab/postgres/load evidence, which still applies unchanged.",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 195,
+    "pass": 193,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "releaseCheck": {
+    "command": "npm run release:check",
+    "result": "all 13 checks PASS, including standalone JS syntax"
+  },
+  "fixedThisRelease": [
+    "PolicyRegistry.list()/#versions() in src/policy-registry.js now treats a missing name as 'match all', fixing GET /api/policies returning an empty array for every created policy",
+    "Added regression test in test/policy-registry.test.js covering list() with no name",
+    "Policy-name input placeholder reworded to avoid looking pre-filled",
+    "Inline clarifying text added to Behavior and Blast Radius sections"
+  ]
+}

@@ -1,5 +1,17 @@
 [
   {
+    "id": "key_ca3c4f8c001dfcf5",
+    "tenantId": "ten_dd6aaf0f66a2e696",
+    "prefix": "ag_7373ca41d1",
+    "hash": "41b583690258b2f34aa03a871bf302ca287132231ba8b475fdaa2c6553821773",
+    "scopes": [
+      "admin:*"
+    ],
+    "createdAt": "2026-10-04T09:00:33.240Z",
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  {
     "id": "key_2242e4ef74fffe5c",
     "tenantId": "ten_9d59b24cae5a90cd",
     "prefix": "ag_8a1b38931c",

@@ -18,7 +18,7 @@ export class PolicyRegistry {
   #load() { try { const x=JSON.parse(fs.readFileSync(this.filePath,'utf8')); return Array.isArray(x)?x:[]; } catch { return []; } }
   #loadAudit() { try { const p=this.filePath.replace(/\.json$/,'-audit.json'); const x=JSON.parse(fs.readFileSync(p,'utf8')); return Array.isArray(x)?x:[]; } catch { return []; } }
   #save() { fs.mkdirSync(path.dirname(this.filePath),{recursive:true}); const t=this.filePath+'.tmp'; fs.writeFileSync(t,JSON.stringify(this.items,null,2)); fs.renameSync(t,this.filePath); const ap=this.filePath.replace(/\.json$/,'-audit.json'); fs.writeFileSync(ap,JSON.stringify(this.audit.slice(0,2000),null,2)); }
-  #versions(name, tenantId = null) { return this.items.filter(x=>x.name===name && (tenantId == null ? !x.tenantId : x.tenantId === tenantId)).sort((a,b)=>b.version-a.version); }
+  #versions(name, tenantId = null) { return this.items.filter(x=>(name==null||x.name===name) && (tenantId == null ? !x.tenantId : x.tenantId === tenantId)).sort((a,b)=>b.version-a.version); }
   create(name, policy={}, metadata={}, tenantId = null) {
     if (!name || typeof name!=='string') throw new TypeError('Policy name is required');
     const versions=this.#versions(name, tenantId); const version=(versions[0]?.version||0)+1;

@@ -1,3 +1,12 @@
+# 2.14.4 — Real Bug Fix: Dashboard "Create Policy" Always Showed an Empty List
+
+- **Fixed a real bug, found by a second colleague trial**: `GET /api/policies` (the call the dashboard's Policies page uses to list everything) always returned `{"policies": []}`, even immediately after successfully creating a policy draft — the dashboard would show a "Draft ... created" success toast, then the list below would still say "No policies yet." The draft WAS being saved correctly to disk; it just could never be read back by the "list all" call. Root cause: `PolicyRegistry#versions()`/`list()` in `src/policy-registry.js` required an exact policy `name` to match anything, but the dashboard's "list all policies" call never sends a name (it wants everything). Fixed by treating a missing name as "match all," matching how the sibling `PolicyBundleRegistry.list()` already worked. This was a real data-visibility bug, not a UI/labeling issue — anyone using the Policies page to create more than a quick one-off policy would have hit it every time.
+- Added a regression test (`test/policy-registry.test.js`) asserting `list()` with no name returns every policy, so this can't silently regress.
+- Clarified the policy-name input placeholder so it reads as an example, not a pre-filled value (`"e.g. refund-safety — type a name, this box is empty"`).
+- Behavior section now notes inline that a finding's count comes from Attack Lab/demo activity, not a real incident (in addition to the explanatory line already in the section header from 2.14.3).
+- Blast Radius header now explains what "scope" and "targets" mean in plain language, and that the 0–100 score is a risk estimate, not an executive decision by itself.
+- Full regression suite: 195 tests, 193 passing (same 2 known Chromium-only browser-smoke failures, unrelated — one new test added for the policy-list fix). `npm run release:check` passes all 13 checks.
+
 # 2.14.3 — Dashboard UX Fixes (from a real colleague trial)
 
 - Replaced the raw browser `prompt()` dialogs for "Create Policy" and "Test Policy" with a proper on-page modal form (name field, pre-filled example policy `{refund:{max:5000}}`, pre-filled example test cases, inline error message, Cancel/Create or Cancel/Run buttons). The old `prompt()` flow could silently hang the page for a tester who didn't expect a native browser dialog — this was the one real blocker the trial found.
