@@ -1,0 +1,25 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.5",
+  "generatedAt": "2026-10-04T10:30:00Z",
+  "note": "2.14.5 fixes a wrong example policy shape in the dashboard's 'New policy' modal ({refund:{max:5000}} was never read by the real policy engine) and a stale hardcoded version tag. No policy-evaluation logic changed. See security-test-results.json in docs/assurance/agentgate-2.14.1/ for the full P0/attack-lab/postgres/load evidence, which still applies unchanged.",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 196,
+    "pass": 194,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "releaseCheck": {
+    "command": "npm run release:check",
+    "result": "all 13 checks PASS, including standalone JS syntax"
+  },
+  "fixedThisRelease": [
+    "standalone.html 'New policy' example policy changed from {refund:{max:5000}} to the real engine schema {autoApproveAmount:500, approvalAmount:5000, requireApprovalForDestructive:false}",
+    "Added test/dashboard-policy-example.test.js regression test checking the dashboard's example policy and example test cases against the real engine together",
+    "Dashboard sidebar version tag now reads /api/health instead of a hardcoded string"
+  ]
+}
