@@ -1,4 +1,4 @@
-const SENSITIVE_FIELD_NAMES = /^(?:secret|password|passphrase|private[_-]?key|access[_-]?token|refresh[_-]?token|authorization|auth[_-]?token|client[_-]?secret|api[_-]?secret)$/i;
+const SENSITIVE_FIELD_NAMES = /^(?:secret|password|passphrase|private[_-]?key|access[_-]?token|refresh[_-]?token|authorization|auth[_-]?token|client[_-]?secret|api[_-]?secret|api[_-]?key|apikey)$/i;
 
 const DEFAULT_RULES = Object.freeze({
   api_key: { action: 'BLOCK', patterns: [/(?:sk-[A-Za-z0-9_-]{16,})/g, /(?:AKIA|ASIA)[A-Z0-9]{16}/g], replacement: '[REDACTED:API_KEY]' },
@@ -59,7 +59,7 @@ function sensitiveFieldFindings(value, path = '$', findings = []) {
 
 function sensitiveFieldFindingFromText(text) {
   const findings = [];
-  const pattern = /[\"'](?:secret|password|passphrase|private[_-]?key|access[_-]?token|refresh[_-]?token|authorization|auth[_-]?token|client[_-]?secret|api[_-]?secret)[\"']\s*:\s*[\"']([^\"']+)[\"']/gi;
+  const pattern = /[\"'](?:secret|password|passphrase|private[_-]?key|access[_-]?token|refresh[_-]?token|authorization|auth[_-]?token|client[_-]?secret|api[_-]?secret|api[_-]?key|apikey)[\"']\s*:\s*[\"']([^\"']+)[\"']/gi;
   for (const match of text.matchAll(pattern)) findings.push({ type: 'generic_secret', action: EGRESS_ACTIONS.BLOCK, count: 1 });
   return findings;
 }

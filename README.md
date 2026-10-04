@@ -1,4 +1,4 @@
-# AgentGate v2.14.6 — First-Client Hardening
+# AgentGate v2.14.7 — Security Defaults & Egress Hardening
 
 **The runtime control plane for AI agents.**
 
@@ -208,7 +208,7 @@ import { runDeepAttackLab, DEEP_ATTACK_CASES } from 'agentgate-runtime-control';
 const results = await runDeepAttackLab(gateway);
 ```
 
-Under the historical default (`unknownActionPolicy: 'allow'`), most of these legitimately ALLOW — that's the point, and CI should treat that as a finding rather than a passing baseline for anything reachable in production. Set `unknownActionPolicy: 'ask'` or `'block'` and re-run to confirm the gap is closed for your own policy.
+New projects default to `unknownActionPolicy: 'ask'`, so unrecognized action names require approval. Strict production deployments should use `unknownActionPolicy: 'block'`. The legacy `allow` behavior remains available only as an explicit opt-in and is rejected by `agentgate doctor` in enforce mode.
 
 ## CLI
 
@@ -281,28 +281,25 @@ Policy generation is deterministic and reviewable. Generated suggestions do not 
 
 ### `unknownActionPolicy` — what happens to action names AgentGate doesn't recognize
 
-The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — does not match any rule and falls through to `ALLOW` by default.** This is a real gap, not a corner case: it means adding a new tool with an unrecognized action name silently gets no protection at all unless you've explicitly listed it in `approvalActions`/`blockActions`.
+The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — now requires approval by default.** Strict production deployments can set `unknownActionPolicy: 'block'` to deny-by-default. This closes the silent fallback gap for new tools and unrecognized action names.
 
 `policies.unknownActionPolicy` controls that fallback:
 
 ```js
 policies: {
-  // 'allow' (default, kept for backward compatibility): unrecognized actions
-  //         pass through untouched, exactly as AgentGate has always done.
-  // 'ask':   unrecognized actions require human approval — the recommended
-  //          starting point; `agentgate init` sets this for new projects.
+  // 'ask' (default): unrecognized actions require human approval.
   // 'block': unrecognized actions are refused outright — the strictest,
-  //          deny-by-default option, once every legitimate action name in
-  //          your system has been classified.
+  //          deny-by-default option for production.
+  // 'allow': legacy opt-in only; enforce-mode `agentgate doctor` rejects it.
   unknownActionPolicy: 'ask'
 }
 ```
 
-`agentgate doctor` warns loudly whenever the effective setting is `'allow'`, so this is never a silent gap in a project that runs `doctor` as part of its setup. `examples/protect-first-tool.mjs` demonstrates the gap and the fix side by side with a `grant_admin` call.
+`agentgate doctor` rejects an explicit `'allow'` setting in enforce mode. `examples/protect-first-tool.mjs` demonstrates the approval path with a `grant_admin` call.
 
 ## Closing the action-name evasion gap further (2.14)
 
-A follow-up adversarial test fed the policy engine action names it had never been designed to see: `delete\u0000all` (embedded NUL), `delete‮` (right-to-left override — makes the name *render* differently than it reads), `％ｅｘｐｏｒｔ` (fullwidth lookalikes of "export"), and `../delete` (path-traversal-shaped). None crashed anything, but all of them ALLOWed under the historical default, which is the real finding: a string-based classifier can always be fed a string it wasn't expecting.
+A follow-up adversarial test fed the policy engine action names it had never been designed to see: `delete\u0000all` (embedded NUL), `delete‮` (right-to-left override — makes the name *render* differently than it reads), `％ｅｘｐｏｒｔ` (fullwidth lookalikes of "export"), and `../delete` (path-traversal-shaped). None crashed anything; the hardened action-name checks now reject these unsafe forms before normal policy classification.
 
 Three independent changes close this, and they compose with `unknownActionPolicy` above rather than replace it:
 

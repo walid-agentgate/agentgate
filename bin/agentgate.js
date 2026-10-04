@@ -119,9 +119,9 @@ export { pack };
   if (config.mode === 'observe') {
     console.error('\n⚠️  WARNING: mode is "observe". Decisions are being recorded but NOTHING is actually blocked or held for approval yet — destructive tools will still execute. Set mode: \'enforce\' in agentgate.config.mjs once you are ready to protect real tools.');
   }
-  const effectiveUnknownActionPolicy = config.policies?.unknownActionPolicy || 'allow';
+  const effectiveUnknownActionPolicy = config.policies?.unknownActionPolicy || 'ask';
   if (effectiveUnknownActionPolicy === 'allow') {
-    console.error('\n⚠️  WARNING: policies.unknownActionPolicy is "allow" (the default). Any action name AgentGate does not recognize — a typo, a new tool, something like "grant_admin" or "drop_database" — is ALLOWED through, not blocked or asked. Set policies.unknownActionPolicy: \'ask\' (or \'block\' for the strictest, deny-by-default behavior) in agentgate.config.mjs before treating this as production-safe.');
+    console.error("\n❌ ERROR: policies.unknownActionPolicy is explicitly 'allow'. Enforce-mode configurations must use 'ask' or 'block' so unrecognized actions cannot silently execute.");
   }
   if (report.ok) {
     console.error('\nNext: protect your first tool — see examples/protect-first-tool.mjs for a worked example (read/delete/refund/export), or run `agentgate attack --config agentgate.config.mjs` to test your policy against the built-in attack scenarios.');
@@ -199,7 +199,7 @@ export { pack };
   }
 } else if (cmd === 'attack-ci') {
   const deep = process.argv.includes('--deep');
-  const gateway = createMCPGateway({ mode:'enforce', policies:{productionBlock:true}, tools:[{name:'export_all',handler:async()=>({})},{name:'update_production',handler:async()=>({})},{name:'delete',handler:async()=>({})},{name:'refund',handler:async()=>({})},{name:'publish',handler:async()=>({})},{name:'grant_admin',handler:async()=>({})},{name:'read_secrets',handler:async()=>({})},{name:'drop_database',handler:async()=>({})},{name:'modify_billing',handler:async()=>({})},{name:'transfer_money',handler:async()=>({})},{name:'disable_security_controls',handler:async()=>({})},{name:'purge_records',handler:async()=>({})},{name:'impersonate_user',handler:async()=>({})},{name:'remove_customer',handler:async()=>({})},{name:'export_data',handler:async()=>({})}] });
+  const gateway = createMCPGateway({ mode:'enforce', policies:{productionBlock:true, unknownActionPolicy:'block'}, tools:[{name:'export_all',handler:async()=>({})},{name:'update_production',handler:async()=>({})},{name:'delete',handler:async()=>({})},{name:'refund',handler:async()=>({})},{name:'publish',handler:async()=>({})},{name:'grant_admin',handler:async()=>({})},{name:'read_secrets',handler:async()=>({})},{name:'drop_database',handler:async()=>({})},{name:'modify_billing',handler:async()=>({})},{name:'transfer_money',handler:async()=>({})},{name:'disable_security_controls',handler:async()=>({})},{name:'purge_records',handler:async()=>({})},{name:'impersonate_user',handler:async()=>({})},{name:'remove_customer',handler:async()=>({})},{name:'export_data',handler:async()=>({})}] });
   const results = deep ? await runDeepAttackLab(gateway) : await runGatewayAttackLab(gateway);
   const summary=summarizeAttackResults(results); console.log(JSON.stringify({summary,results},null,2)); process.exitCode=summary.failed?2:0;
 } else if (cmd === 'test' || cmd === 'check') {
@@ -246,7 +246,7 @@ export { pack };
     }
   }
   if (!gateway) {
-    gateway = createMCPGateway({ mode: 'enforce', policies: { productionBlock: true }, tools: defaultTools });
+    gateway = createMCPGateway({ mode: 'enforce', policies: { productionBlock: true, unknownActionPolicy: 'block' }, tools: defaultTools });
   }
   const results = deep ? await runDeepAttackLab(gateway) : await runGatewayAttackLab(gateway);
   const summary = summarizeAttackResults(results);

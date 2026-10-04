@@ -66,6 +66,7 @@ export function createAgentGate(options = {}) {
 
   return Object.freeze({
     mode: options.mode || 'enforce',
+    policies: Object.freeze({ ...(runtime.policies || options.policies || {}) }),
     check,
     execute,
     protect,

@@ -34,3 +34,13 @@ test('generic sensitive fields work when nested in arrays', () => {
   assert.equal(result.value.items[0].secret, '[REDACTED:SECRET]');
   assert.equal(result.value.items[1].access_token, '[REDACTED:SECRET]');
 });
+
+
+test('API-key field names are treated as secrets even when values are not provider-shaped', () => {
+  const result = guardEgress({ api_key: 'MY_SUPER_SECRET', apiKey: 'SECOND_SECRET', apikey: 'THIRD_SECRET' });
+  assert.equal(result.action, 'BLOCK');
+  assert.equal(result.value.api_key, '[REDACTED:SECRET]');
+  assert.equal(result.value.apiKey, '[REDACTED:SECRET]');
+  assert.equal(result.value.apikey, '[REDACTED:SECRET]');
+  assert.doesNotMatch(JSON.stringify(result), /MY_SUPER_SECRET|SECOND_SECRET|THIRD_SECRET/);
+});

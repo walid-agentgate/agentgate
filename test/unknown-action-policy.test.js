@@ -10,11 +10,11 @@ import { createMCPGateway } from '../src/mcp-gateway.js';
 // lock in the fix: `unknownActionPolicy` controls that fallback, and its
 // risky default is surfaced loudly rather than left silent.
 
-test('an unrecognized action ALLOWs by default (documents the gap, for backward compatibility)', () => {
+test('an unrecognized action requires approval by default', () => {
   for (const action of ['grant_admin', 'drop_database', 'transfer_money', 'read_secrets', 'modify_billing']) {
     const result = evaluate({ action }, {});
-    assert.equal(result.decision, 'ALLOW', `${action} should still default-allow unless unknownActionPolicy is set`);
-    assert.equal(result.winningRule, 'default-allow');
+    assert.equal(result.decision, 'ASK', `${action} should require approval by default`);
+    assert.equal(result.winningRule, 'unknown-action-ask');
   }
 });
 
@@ -60,21 +60,24 @@ test('the unrecognized-action gap does not execute the real handler when unknown
   assert.equal(executed, false);
 });
 
-test('validateAgentGateConfig warns when unknownActionPolicy is left at its default', () => {
-  const defaulted = validateAgentGateConfig({ policies: {} });
-  assert.ok(defaulted.warnings.some(w => w.includes('unknownActionPolicy')));
+test('validateAgentGateConfig uses ask by default and rejects explicit allow in enforce mode', () => {
+  const defaulted = validateAgentGateConfig({ mode: 'enforce', policies: {} });
+  assert.equal(defaulted.valid, true);
+  assert.equal(defaulted.warnings.some(w => w.includes('unknownActionPolicy')), false);
 
-  const explicitAllow = validateAgentGateConfig({ policies: { unknownActionPolicy: 'allow' } });
-  assert.ok(explicitAllow.warnings.some(w => w.includes('unknownActionPolicy')));
+  const explicitAllow = validateAgentGateConfig({ mode: 'enforce', policies: { unknownActionPolicy: 'allow' } });
+  assert.equal(explicitAllow.valid, false);
+  assert.ok(explicitAllow.errors.some(w => w.includes('unknownActionPolicy')));
 
-  const askSet = validateAgentGateConfig({ policies: { unknownActionPolicy: 'ask' } });
-  assert.ok(!askSet.warnings.some(w => w.includes('unknownActionPolicy')));
+  const askSet = validateAgentGateConfig({ mode: 'enforce', policies: { unknownActionPolicy: 'ask' } });
+  assert.equal(askSet.valid, true);
 
-  const blockSet = validateAgentGateConfig({ policies: { unknownActionPolicy: 'block' } });
-  assert.ok(!blockSet.warnings.some(w => w.includes('unknownActionPolicy')));
+  const blockSet = validateAgentGateConfig({ mode: 'enforce', policies: { unknownActionPolicy: 'block' } });
+  assert.equal(blockSet.valid, true);
 });
 
-test('runDoctorChecks surfaces the unknownActionPolicy warning end-to-end', () => {
-  const report = runDoctorChecks({ config: { mode: 'enforce', policies: {} } });
-  assert.ok(report.warnings.some(w => w.includes('unknownActionPolicy')));
+test('runDoctorChecks fails enforce mode when unknownActionPolicy is explicitly allow', () => {
+  const report = runDoctorChecks({ config: { mode: 'enforce', policies: { unknownActionPolicy: 'allow' } } });
+  assert.equal(report.ok, false);
+  assert.ok(report.checks.find(x => x.name === 'config')?.details?.errors?.some(w => w.includes('unknownActionPolicy')));
 });

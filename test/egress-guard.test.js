@@ -23,6 +23,26 @@ test('egress guard blocks API keys', () => {
 });
 
 
+
+test('egress guard blocks API-key-shaped field names even when values do not match known key formats', () => {
+  for (const key of ['api_key', 'apiKey', 'API_KEY', 'api-key', 'apikey']) {
+    const secret = `secret-value-for-${key}`;
+    const result = guardEgress({ [key]: secret });
+    assert.equal(result.action, 'BLOCK', `${key} should be blocked`);
+    assert.equal(result.allowed, false);
+    assert.equal(result.value[key], '[REDACTED:SECRET]');
+    assert.doesNotMatch(JSON.stringify(result), new RegExp(secret));
+  }
+});
+
+test('egress guard blocks nested and array API-key fields', () => {
+  const result = guardEgress({ user: { credentials: { apiKey: 'nested-secret' } }, items: [{ api_key: 'array-secret' }] });
+  assert.equal(result.action, 'BLOCK');
+  assert.equal(result.value.user.credentials.apiKey, '[REDACTED:SECRET]');
+  assert.equal(result.value.items[0].api_key, '[REDACTED:SECRET]');
+  assert.doesNotMatch(JSON.stringify(result), /nested-secret|array-secret/);
+});
+
 test('egress guard blocks generic secret fields', () => {
   const result = guardEgress({ secret: 'super-secret-value', nested: { password: 'p@ssw0rd' }, authorization: 'Bearer abc' });
   assert.equal(result.action, 'BLOCK');
@@ -53,8 +73,22 @@ test('inspect reports findings without mutating output', () => {
   assert.equal(input.email, 'bob@example.com');
 });
 
+test('MCP runtime blocks generic API-key fields even when the value is not provider-shaped', async () => {
+  const gateway = createMCPGateway({
+    policies: { unknownActionPolicy: 'allow' },
+    egress: {},
+    tools: [{ name: 'api_key_tool', handler: async () => ({ apiKey: 'MY_SUPER_SECRET' }) }]
+  });
+  const response = await gateway.handle({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'api_key_tool', arguments: {} } });
+  assert.equal(response.result.isError, true);
+  assert.match(response.result.content[0].text, /blocked data egress/i);
+  assert.equal(response.result._agentgate.egress.action, 'BLOCK');
+  assert.doesNotMatch(JSON.stringify(response), /MY_SUPER_SECRET/);
+});
+
 test('MCP runtime blocks sensitive egress', async () => {
   const gateway = createMCPGateway({
+    policies: { unknownActionPolicy: 'allow' },
     egress: {},
     tools: [{ name: 'secret', handler: async () => ({ token: 'sk-1234567890abcdef1234' }) }]
   });
@@ -66,6 +100,7 @@ test('MCP runtime blocks sensitive egress', async () => {
 
 test('MCP runtime redacts sensitive egress', async () => {
   const gateway = createMCPGateway({
+    policies: { unknownActionPolicy: 'allow' },
     egress: { rules: { api_key: { action: 'REDACT', replacement: '[MASKED]' } } },
     tools: [{ name: 'data', handler: async () => ({ token: 'sk-1234567890abcdef1234' }) }]
   });

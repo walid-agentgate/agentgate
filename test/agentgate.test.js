@@ -81,3 +81,11 @@ test('agentgate denial never executes a protected tool', async () => {
   assert.equal(denied.status, 'denied');
   assert.equal(calls, 0);
 });
+
+
+test('agentgate exposes effective policies for doctor/config inspection', async () => {
+  const { createAgentGate } = await import('../src/agentgate.js');
+  const gate = createAgentGate({ mode: 'enforce', policies: { unknownActionPolicy: 'block', productionBlock: true } });
+  assert.equal(gate.mode, 'enforce');
+  assert.equal(gate.policies.unknownActionPolicy, 'block');
+});

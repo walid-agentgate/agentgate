@@ -14,8 +14,12 @@ export function validateAgentGateConfig(config = {}) {
   if (p.approvalAmount !== undefined && (!Number.isFinite(Number(p.approvalAmount)) || Number(p.approvalAmount) < 0)) errors.push('policies.approvalAmount must be a non-negative number');
   if (Number.isFinite(Number(p.autoApproveAmount)) && Number.isFinite(Number(p.approvalAmount)) && Number(p.autoApproveAmount) > Number(p.approvalAmount)) errors.push('autoApproveAmount cannot exceed approvalAmount');
   if (c.mode === 'observe') warnings.push('observe mode records decisions but does not enforce them');
-  if (!p.unknownActionPolicy || p.unknownActionPolicy === 'allow') {
-    warnings.push('unknownActionPolicy is "allow" (the default) — any action name AgentGate does not recognize (e.g. a typo, a new tool, or something like "grant_admin"/"drop_database") is ALLOWED, not blocked or asked. Set policies.unknownActionPolicy to "ask" or "block" before relying on this for production safety.');
+  const unknownActionPolicy = p.unknownActionPolicy || 'ask';
+  if (!['allow', 'ask', 'block'].includes(unknownActionPolicy)) errors.push('policies.unknownActionPolicy must be allow, ask, or block');
+  if (c.mode === 'enforce' && unknownActionPolicy === 'allow') {
+    errors.push('policies.unknownActionPolicy=allow is not permitted in enforce mode; use ask or block for a production-safe deny-by-default posture');
+  } else if (unknownActionPolicy === 'allow') {
+    warnings.push('unknownActionPolicy is explicitly "allow" — unrecognized action names can execute without AgentGate approval. Use "ask" or "block" unless another authorization boundary fully classifies every action.');
   }
   if (c.authRequired === false) warnings.push('authRequired=false is unsafe for non-local deployments');
   if (c.localDevSession === true && c.authRequired === false) warnings.push('localDevSession should not be combined with authRequired=false');

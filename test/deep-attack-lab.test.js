@@ -6,19 +6,19 @@ import { runDeepAttackLab, summarizeAttackResults, DEEP_ATTACK_CASES } from '../
 // The deep attack set specifically targets action names the policy engine
 // doesn't classify by default, plus two "name evasion" cases (calling a
 // dangerous action under a name that isn't in blockActions/approvalActions).
-// Per the security review: these should ALLOW under the historical default
-// and be fully caught once unknownActionPolicy is set.
+// New projects default to approval for these actions; strict production
+// configurations can block them outright.
 
 const deepTools = DEEP_ATTACK_CASES.map(c => ({ name: c.action, handler: async () => ({ executed: true }) }));
 
-test('deep attack set finds the unrecognized-action gap under default policy', async () => {
+test('deep attack set requires approval for unrecognized actions under default policy', async () => {
   const gateway = createMCPGateway({ mode: 'enforce', policies: { productionBlock: true }, tools: deepTools });
   const results = await runDeepAttackLab(gateway);
   const summary = summarizeAttackResults(results);
   assert.equal(summary.total, DEEP_ATTACK_CASES.length);
-  // Most of these are genuinely unrecognized action names, so most ALLOW —
-  // this is the documented gap, not a test bug.
-  assert.ok(summary.allowed > 0, 'the deep set should surface at least one unrecognized-action ALLOW under the default policy');
+  assert.equal(summary.allowed, 0, 'the default policy must not silently allow unrecognized actions');
+  assert.equal(summary.failed, 0);
+  assert.equal(summary.status, 'PROTECTED');
 });
 
 test('unknownActionPolicy: "ask" closes the gap the deep attack set finds', async () => {

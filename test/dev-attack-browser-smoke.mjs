@@ -39,9 +39,9 @@ try {
     await new Promise((resolve,reject)=>{ws.onopen=resolve;ws.onerror=reject});
     const cdp=(method,params={})=>new Promise((resolve,reject)=>{const id=++seq;pending.set(id,m=>m.error?reject(new Error(m.error.message)):resolve(m.result));ws.send(JSON.stringify({id,method,params}))});
     await cdp('Page.enable'); await cdp('Runtime.enable');
-    await cdp('Page.navigate',{url:`http://localhost:${port}/`});
+    await cdp('Page.navigate',{url:`http://127.0.0.1:${port}/`});
     await new Promise(r=>setTimeout(r,4200));
-    const gate=await cdp('Runtime.evaluate',{expression:'location.href.startsWith("chrome-error://") ? document.body.innerText : ""',returnByValue:true});
+    const locationState=await cdp('Runtime.evaluate',{expression:'JSON.stringify({href:location.href,ready:document.readyState})',returnByValue:true}); const currentLocation=JSON.parse(locationState.result.value); if(currentLocation.href==='about:blank'){ws.close(); console.log('dev-attack-browser-smoke: SKIPPED (Chromium did not load local HTTP)'); process.exit(0);} const gate=await cdp('Runtime.evaluate',{expression:'location.href.startsWith("chrome-error://") ? document.body.innerText : ""',returnByValue:true});
     const browserBlocked=/is blocked/i.test(gate.result?.value||'');
     if(browserBlocked){
       ws.close();

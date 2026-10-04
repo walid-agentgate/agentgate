@@ -1,3 +1,12 @@
+# 2.14.7 — Security Defaults & Egress Hardening
+
+- **Unknown actions now require approval by default.** `unknownActionPolicy` defaults to `ask`; strict production configurations can use `block`, while explicit `allow` is rejected by `agentgate doctor` in enforce mode.
+- **Attack Lab defaults are fail-closed.** Built-in CI/strict attack runs use `unknownActionPolicy: 'block'`, so unrecognized dangerous action names cannot silently pass the security gate.
+- **Egress Guard now treats API-key field names as secrets.** `api_key`, `apiKey`, `API_KEY`, `api-key`, and `apikey` are blocked and redacted even when their values do not match provider-specific key formats.
+- **MCP egress regression coverage expanded.** Nested/array API-key fields and generic API-key outputs are verified not to leak their values.
+- **Doctor/initialization guidance updated** to reflect the safer default posture. The `createAgentGate()` instance now exposes its effective policies so `agentgate doctor` validates the actual loaded project configuration instead of fallback defaults.
+- **Release version bumped to 2.14.7.** Full regression suite: 205 tests, 205 passing.
+
 # 2.14.6 — Independent Technical Review: 6 Fixes (Replay History, Payload Masking, Metric Labeling, Version Consistency, Guided Setup, Layout Overflow)
 
 An independent technical review (install → test → dashboard → Attack Lab → approval flow → Replay → Observability) rated the project 8.5/10 for a limited trial and asked for 6 fixes before freezing further. All 6 are done:

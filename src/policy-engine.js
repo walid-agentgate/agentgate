@@ -84,7 +84,10 @@ export function evaluate(input = {}, policies = {}) {
     return decision('ASK', 'Amount exceeds the automatic approval threshold', 65, { ruleTrace: [...trace, { id: 'auto-approval-threshold', matched: true, decision: 'ASK', reason: 'Amount exceeds the automatic approval threshold' }], winningRule: 'auto-approval-threshold' });
   }
   if (readOnly.has(action)) return decision('ALLOW', 'Read-only action allowed', 5, { ruleTrace: [...trace, { id: 'readonly-allow', matched: true, decision: 'ALLOW', reason: 'Read-only action allowed' }], winningRule: 'readonly-allow' });
-  if (destructive.has(action) && policies.requireApprovalForDestructive !== false) {
+  if (destructive.has(action)) {
+    if (policies.requireApprovalForDestructive === false) {
+      return decision('ALLOW', 'No blocking policy matched', 10, { ruleTrace: [...trace, { id: 'default-allow', matched: true, decision: 'ALLOW', reason: 'No blocking policy matched' }], winningRule: 'default-allow' });
+    }
     return decision('ASK', 'Destructive action requires approval', 75, { ruleTrace: [...trace, { id: 'destructive-approval', matched: true, decision: 'ASK', reason: 'Destructive action requires approval' }], winningRule: 'destructive-approval' });
   }
   // The action name didn't match anything above: it isn't in the small
@@ -93,14 +96,13 @@ export function evaluate(input = {}, policies = {}) {
   // it's safe — a tool or integration can use any action name it likes
   // ('grant_admin', 'drop_database', 'transfer_money', ...). `unknownActionPolicy`
   // controls what happens to it:
-  //   - 'allow' (default, for backward compatibility): let it through, same
-  //     as AgentGate has always done. `agentgate doctor` warns loudly when
-  //     this is the effective setting so it's never a silent gap.
-  //   - 'ask': require human approval for anything unrecognized.
+  //   - 'ask' (default): require human approval for anything unrecognized.
   //   - 'block': refuse anything unrecognized outright — the strictest,
   //     deny-by-default option, recommended for production once every
   //     legitimate action name has been classified.
-  const unknownActionPolicy = policies.unknownActionPolicy || 'allow';
+  //   - 'allow': legacy opt-in behavior; explicitly choose it only when
+  //     the application has its own complete authorization boundary.
+  const unknownActionPolicy = policies.unknownActionPolicy || 'ask';
   if (unknownActionPolicy === 'block') {
     return decision('BLOCK', 'Unrecognized action blocked by unknownActionPolicy', 88, { ruleTrace: [...trace, { id: 'unknown-action-block', matched: true, decision: 'BLOCK', reason: 'Unrecognized action blocked by unknownActionPolicy' }], winningRule: 'unknown-action-block' });
   }

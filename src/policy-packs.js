@@ -11,6 +11,7 @@ const SUPPORT_REFUND_SAFETY = Object.freeze({
   useCase: 'support-financial-operations',
   policies: Object.freeze({
     productionBlock: false,
+    unknownActionPolicy: 'ask',
     autoApproveAmount: 500,
     approvalAmount: 5000,
     blockActions: Object.freeze(['export_all'])
@@ -38,6 +39,7 @@ const PRODUCTION_DEVOPS_SAFETY = Object.freeze({
   useCase: 'devops-it-operations',
   policies: Object.freeze({
     productionBlock: true,
+    unknownActionPolicy: 'block',
     requireApprovalForDestructive: true,
     blockActions: Object.freeze(['update_production', 'delete', 'deploy'])
   }),
