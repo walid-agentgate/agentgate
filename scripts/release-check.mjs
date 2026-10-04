@@ -12,6 +12,12 @@ const ok = (name, condition, detail = '') => condition ? console.log(`PASS ${nam
 // (as it did going from 2.13.x to 2.14.x) for a reason that has nothing to
 // do with whether the release is actually clean.
 ok('package version', /^\d+\.\d+\.\d+$/.test(pkg.version), pkg.version);
+// A stale version string in README.md/standalone.html confused two separate
+// independent trial reviews (2.14.2 and this one): a reader sees "v2.13.8"
+// or "v2.14.1" in prose and assumes they installed the wrong version, even
+// though package.json and `agentgate --version` were always correct. Catch
+// it at release time instead of relying on someone to notice by eye.
+ok('README version matches package.json', fs.readFileSync(path.join(root, 'README.md'), 'utf8').includes(`v${pkg.version}`), `expected "v${pkg.version}" somewhere in README.md`);
 ok('standalone exists', fs.existsSync(path.join(root, 'standalone.html')));
 ok('production docs', ['production-deployment.md','production-quickstart.md','data-protection.md','incident-response.md','performance.md','performance-baseline.md','integration-matrix.md','threat-model.md','observability-alerting.md','production-readiness.md','external-security-review-test-pack.md','managed-postgres-acceptance-test.md'].every(f => fs.existsSync(path.join(root, 'docs', f))));
 ok('production compose', fs.existsSync(path.join(root, 'docker-compose.production.yml')));
@@ -33,6 +39,11 @@ const files = JSON.parse(pack)[0]?.files?.map(x => x.path) || [];
 ok('npm pack has no test files', !files.some(f => f.startsWith('test/')));
 ok('npm pack has no internal tarballs', !files.some(f => /\.tgz$/.test(f)));
 ok('npm pack has no stale package tarballs', !files.some(f => /agentgate-runtime-control-2\.13\.[0-3]\./.test(f)));
+// docs/assurance/ accumulates one versioned snapshot folder per release (by
+// design, see docs/assurance/*/RELEASE-DECISION.md) and is meant to stay in
+// the git history as an evidence trail, not ship to every npm consumer —
+// an independent review flagged this as unnecessary package bloat/noise.
+ok('npm pack excludes historical assurance docs', !files.some(f => f.startsWith('docs/assurance/')));
 
 if (failures.length) {
   console.error(`FAIL release-check (${failures.length})`);

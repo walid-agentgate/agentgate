@@ -1,4 +1,4 @@
-# AgentGate v2.14.1 — First-Client Hardening
+# AgentGate v2.14.6 — First-Client Hardening
 
 **The runtime control plane for AI agents.**
 
@@ -39,7 +39,7 @@ Each command prints what to run next, so you don't have to remember this sequenc
 
 ## Design Partner Edition
 
-AgentGate 2.14.1 focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
+AgentGate 2.14.6 focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
 
 ```bash
 npm install agentgate-runtime-control
@@ -143,6 +143,23 @@ const refund = protect(myRefundTool, {
   approvalAmount: 5000
 });
 ```
+
+### Subpath exports
+
+Most things you need — `protect`, `createAgentGate`, `createMCPGateway`, `PostgresStoreAdapter`, `createSupabaseAdapter`, ... — come from the package root:
+
+```js
+import { createAgentGate, PostgresStoreAdapter } from 'agentgate-runtime-control';
+```
+
+A few lower-level, less commonly needed pieces are exported from their own subpath instead:
+
+```js
+import { createControlPlane } from 'agentgate-runtime-control/control-plane';
+import { PolicyRegistry } from 'agentgate-runtime-control/policy-registry';
+```
+
+See the `exports` map in `package.json` for the full list of subpaths, and `src/index.js` for everything the root re-exports.
 
 ## Runtime
 

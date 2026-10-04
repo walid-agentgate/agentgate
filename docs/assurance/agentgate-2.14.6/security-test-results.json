@@ -1,0 +1,31 @@
+{
+  "product": "agentgate-runtime-control",
+  "version": "2.14.6",
+  "generatedAt": "2026-10-04T15:00:00Z",
+  "note": "2.14.6 implements 6 fixes from an independent technical review (Replay history, Monitor payload masking, Observability metric labeling, version-consistency enforcement, guided setup, layout overflow) plus 3 related documentation/packaging items. No policy-evaluation or decision logic changed. See security-test-results.json in docs/assurance/agentgate-2.14.1/ for the full P0/attack-lab/postgres/load evidence, which still applies unchanged.",
+  "regressionSuite": {
+    "command": "node --test",
+    "tests": 200,
+    "pass": 198,
+    "fail": 2,
+    "knownFailures": [
+      "test/dev-attack-browser-smoke.mjs (requires Chromium, environment-only)",
+      "test/release-browser-smoke.mjs (requires Chromium, environment-only)"
+    ]
+  },
+  "releaseCheck": {
+    "command": "npm run release:check",
+    "result": "all 14 checks PASS (1 new check added: README version matches package.json)"
+  },
+  "fixedThisRelease": [
+    "Replay: added searchable run history, run selection, per-run JSON export",
+    "Monitor: pending-approval payloads masked by default (sensitive fields redacted, operational fields visible), full payload behind View details",
+    "Observability: Success metric relabeled Executed cleanly, with explanatory text that BLOCK/ASK are not failures",
+    "release-check.mjs: added permanent README/package.json version-consistency check",
+    "Overview: added 3-option guided-setup block with code samples verified against real package exports",
+    "CSS: overflow-wrap/min-width:0/max-width:100% guards for long unbroken strings",
+    "Overview: clearer demo-data labeling",
+    "README: documented subpath exports",
+    "package.json files field + release-check.mjs: docs/assurance/* excluded from published npm package"
+  ]
+}
