@@ -22,6 +22,7 @@ ok('standalone exists', fs.existsSync(path.join(root, 'standalone.html')));
 ok('production docs', ['production-deployment.md','production-quickstart.md','data-protection.md','incident-response.md','performance.md','performance-baseline.md','integration-matrix.md','threat-model.md','observability-alerting.md','production-readiness.md','external-security-review-test-pack.md','managed-postgres-acceptance-test.md'].every(f => fs.existsSync(path.join(root, 'docs', f))));
 ok('production compose', fs.existsSync(path.join(root, 'docker-compose.production.yml')));
 ok('npm lockfile', fs.existsSync(path.join(root, 'package-lock.json')));
+ok('CLI executable', (fs.statSync(path.join(root, 'bin/agentgate.js')).mode & 0o111) !== 0);
 ok('postgres RLS schema', /enable row level security/i.test(fs.readFileSync(path.join(root, 'schema/postgres.sql'), 'utf8')));
 ok('postgres tenant checks', /tenant_id\s*=\s*current_setting\('agentgate\.tenant_id'/i.test(fs.readFileSync(path.join(root, 'schema/postgres.sql'), 'utf8')));
 ok('external review is not falsely claimed', /Not completed/i.test(fs.readFileSync(path.join(root, 'docs/external-security-review.md'), 'utf8')));

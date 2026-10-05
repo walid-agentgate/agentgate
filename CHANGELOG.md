@@ -1,3 +1,10 @@
+# 2.14.8 — CLI Packaging & Release Hardening
+
+- **Fixed CLI executable permissions.** `bin/agentgate.js` is now packaged with standard executable permissions so `npx agentgate-runtime-control@2.14.8 --help` runs correctly instead of failing with `Permission denied`.
+- **Fixed npm CLI bin metadata.** The package `bin` path now uses the canonical `bin/agentgate.js` form.
+- **Release check now verifies CLI executability.**
+- **Release version bumped to 2.14.8.** Full regression suite: 205 tests, 205 passing.
+
 # 2.14.7 — Security Defaults & Egress Hardening
 
 - **Unknown actions now require approval by default.** `unknownActionPolicy` defaults to `ask`; strict production configurations can use `block`, while explicit `allow` is rejected by `agentgate doctor` in enforce mode.

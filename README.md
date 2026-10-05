@@ -1,4 +1,4 @@
-# AgentGate v2.14.7 — Security Defaults & Egress Hardening
+# AgentGate v2.14.8 — Security Defaults & Egress Hardening
 
 **The runtime control plane for AI agents.**
 
