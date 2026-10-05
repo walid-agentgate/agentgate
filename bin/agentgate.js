@@ -22,7 +22,7 @@ const require = createRequire(import.meta.url);
 const PACKAGE_VERSION = require('../package.json').version;
 
 const [cmd, action='read', amount='0'] = process.argv.slice(2);
-const showHelp = () => console.log(`AgentGate ${PACKAGE_VERSION} — Runtime Control Plane
+const showHelp = () => console.log(`MAGON ${PACKAGE_VERSION} — Runtime Control Plane
 
 Usage:
   agentgate init
@@ -95,7 +95,7 @@ export { pack };
   const gate = createAgentGate({ agent: 'SupportAgent', mode: 'enforce', policies: pack.policies });
   let executions = 0;
   const refund = gate.protect(async input => { executions += 1; return { refunded: input.amount, customerId: input.customerId }; }, { tool: 'refund', action: 'refund' });
-  console.log(`\nAgentGate — ${pack.name} v${pack.version}`);
+  console.log(`\nMAGON — ${pack.name} v${pack.version}`);
   console.log('Policy: refund → ASK | > $5,000 → BLOCK | invalid amounts → BLOCK');
   for (const [amount, label] of [[250, 'small-refund'], [1200, 'review-refund'], [5000.01, 'over-ceiling'], ['5000.01', 'invalid-string']]) {
     try {

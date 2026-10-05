@@ -1,14 +1,14 @@
-# AgentGate v2.14.8 — Security Defaults & Egress Hardening
+# MAGON v2.14.8 — Runtime Control for AI Agents
 
-**The runtime control plane for AI agents.**
+**Runtime Control for AI Agents.**
 
-AgentGate sits between an agent and its tools and makes runtime decisions:
+MAGON sits between an agent and its tools and makes runtime decisions:
 
 `ALLOW` → execute · `ASK` → require approval · `BLOCK` → stop
 
 ### Security-aware observability
 
-AgentGate does not attempt to replace generic tracing platforms. Its observability layer joins runtime behavior to the controls that protect the agent:
+MAGON does not attempt to replace generic tracing platforms. Its observability layer joins runtime behavior to the controls that protect the agent:
 
 - Unified trace: LLM → tool → policy → approval → execution → egress → behavior → cost
 - Deterministic Agent Efficiency Score with transparent breakdown
@@ -39,7 +39,7 @@ Each command prints what to run next, so you don't have to remember this sequenc
 
 ## Design Partner Edition
 
-AgentGate 2.14.6 focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
+MAGON focuses on controlled design-partner adoption before public marketing. Start with one sensitive tool, use Observe/Shadow mode, then move to Enforce only after the acceptance gates pass.
 
 ```bash
 npm install agentgate-runtime-control
@@ -70,7 +70,7 @@ docker run --rm -p 8787:8787 agentgate
 
 ### Test your own tools against Attack Lab
 
-By default, `agentgate attack` runs the built-in attack scenarios against AgentGate's default policies. To test them against **your own** `agentgate.config.mjs` (the policies you actually ship with), pass `--config`:
+By default, `agentgate attack` runs the built-in attack scenarios against MAGON's default policies. To test them against **your own** `agentgate.config.mjs` (the policies you actually ship with), pass `--config`:
 
 ```bash
 agentgate attack --config ./agentgate.config.mjs
@@ -84,15 +84,15 @@ See [`docs/production-readiness.md`](docs/production-readiness.md), [`docs/produ
 
 ### About `npm test` on the installed package
 
-Running `npm test` inside an **installed** copy of `agentgate-runtime-control` (i.e. from `node_modules`) reports `0 tests` — that's expected, not a bug: the `test/` directory is intentionally not published to npm (see `files` in `package.json`), the same way most published packages don't ship their own test suite to consumers. The real suite (150+ cases, covering policy decisions, the approval lifecycle — including concurrent approve/deny and TTL expiry — attack-lab scenarios, egress guarding, multi-tenant isolation, and more) lives in and runs from the [source repository](https://github.com/walid-agentgate/agentgate) via `node --test`.
+Running `npm test` inside an **installed** copy of `agentgate-runtime-control` (i.e. from `node_modules`) reports `0 tests` — that's expected, not a bug: the `test/` directory is intentionally not published to npm (see `files` in `package.json`), the same way most published packages don't ship their own test suite to consumers. The real suite (150+ cases, covering policy decisions, the approval lifecycle — including concurrent approve/deny and TTL expiry — attack-lab scenarios, egress guarding, multi-tenant isolation, and more) lives in and runs from the [source repository](https://github.com/walid-agentgate/magon) via `node --test`.
 
 ## Security
 
-See [`SECURITY.md`](SECURITY.md) for the security model and vulnerability-reporting guidance. AgentGate provides a deterministic control layer; it does not replace application-level identity, secret management, network isolation, or threat-model testing.
+See [`SECURITY.md`](SECURITY.md) for the security model and vulnerability-reporting guidance. MAGON provides a deterministic control layer; it does not replace application-level identity, secret management, network isolation, or threat-model testing.
 
 ## Agent Observability
 
-AgentGate adds security-aware observability on top of the same runtime runs used for enforcement and replay. It reports decision counts, success/error rates, P50/P95/P99 latency, tool/agent/model breakdowns, unified security traces, deterministic Agent Efficiency scores, behavior×cost×security correlation, cost analytics, and deterministic cost forecasting.
+MAGON adds security-aware observability on top on top of the same runtime runs used for enforcement and replay. It reports decision counts, success/error rates, P50/P95/P99 latency, tool/agent/model breakdowns, unified security traces, deterministic Agent Efficiency scores, behavior×cost×security correlation, cost analytics, and deterministic cost forecasting.
 
 ```js
 const gateway = createMCPGateway({
@@ -122,7 +122,7 @@ const gateway = createMCPGateway({
 });
 ```
 
-When an estimated action cost crosses `ask`, AgentGate enters the normal approval path. When it crosses `hard`, the action is blocked. The control is deterministic and separate from the security policy engine.
+When an estimated action cost crosses `ask`, MAGON enters the normal approval path. When it crosses `hard`, the action is blocked. The control is deterministic and separate from the security policy engine.
 
 The Control Plane exposes `/api/observability`, `/api/trace`, `/api/efficiency`, `/api/behavior/correlation`, `/api/cost`, `/api/cost/analytics`, `/api/cost/forecast`, `/api/cost/pricing`, and `/api/cost/budgets`.
 
@@ -181,7 +181,7 @@ await gate.execute(myTool, {
 console.log(gate.runs());
 ```
 
-Observe mode records what AgentGate **would** block/ask without interrupting production. Enforce mode applies the decision.
+Observe mode records what MAGON **would** block/ask without interrupting production. Enforce mode applies the decision.
 
 ## Attack Lab
 
@@ -220,7 +220,7 @@ agentgate attack --deep
 
 ## MCP Gateway
 
-AgentGate can now sit between an MCP client/agent and tool handlers. It supports MCP-style JSON-RPC methods for `initialize`, `ping`, `tools/list`, and `tools/call`.
+MAGON can now sit between an MCP client/agent and tool handlers. It supports MCP-style JSON-RPC methods for `initialize`, `ping`, `tools/list`, and `tools/call`.
 
 ```js
 import { createMCPGatewayServer } from 'agentgate-runtime-control/mcp-gateway';
@@ -243,7 +243,7 @@ node examples/mcp-gateway.mjs
 
 ## MCP Gateway Attack Lab
 
-AgentGate can now execute its built-in attack scenarios through the MCP gateway itself:
+MAGON can now execute its built-in attack scenarios through the MCP gateway itself:
 
 ```js
 import { createMCPGateway, runGatewayAttackLab } from 'agentgate-runtime-control';
@@ -279,7 +279,7 @@ const nextPolicy = mergePolicies(currentPolicy, generated.policy);
 
 Policy generation is deterministic and reviewable. Generated suggestions do not automatically authorize or block traffic until the resulting policy is explicitly applied to a gateway.
 
-### `unknownActionPolicy` — what happens to action names AgentGate doesn't recognize
+### `unknownActionPolicy` — what happens to action names MAGON doesn't recognize
 
 The policy engine only classifies a small built-in set of action names as `destructive` (`delete`, `refund`, `publish`, `deploy`, `export_all`, `update_production`) or `readOnly` (`read`, `search`, `list`, `get`, `fetch`). **Any other action name — a typo, a new tool, a third-party integration using its own naming, or something that sounds obviously dangerous like `grant_admin` or `drop_database` — now requires approval by default.** Strict production deployments can set `unknownActionPolicy: 'block'` to deny-by-default. This closes the silent fallback gap for new tools and unrecognized action names.
 
@@ -371,11 +371,11 @@ The approval layer is intentionally separate from policy evaluation: policy deci
 
 ### Approval lifecycle — who, when, expiry, single-use, revocation
 
-- **Who approved / denied, and when**: every approval record carries `createdAt`, `resolvedAt`, and (for a deny) a `resolutionReason`. The run record (`gateway.replay(runId)`) links back to the approval via `approvalId` and stores the same `approval` block for audit export (`gateway.replay()` / `/api/audit/export`). AgentGate itself doesn't have a user identity system, so "who" is whatever identity your own auth layer attaches to the request that calls `approve()`/`deny()` — log that at your call site if you need a named approver.
+- **Who approved / denied, and when**: every approval record carries `createdAt`, `resolvedAt`, and (for a deny) a `resolutionReason`. The run record (`gateway.replay(runId)`) links back to the approval via `approvalId` and stores the same `approval` block for audit export (`gateway.replay()` / `/api/audit/export`). MAGON itself doesn't have a user identity system, so "who" is whatever identity your own auth layer attaches to the request that calls `approve()`/`deny()` — log that at your call site if you need a named approver.
 - **Expiry (TTL)**: a pending approval expires automatically after **15 minutes** by default (`DEFAULT_APPROVAL_TTL_MS` in `src/approval.js`). Pass `approvalTTLMs` to `createRuntime`/`createAgentGate`/`createMCPGateway` to change it, or `ttlMs: null` on a specific request to disable expiry. Once `expiresAt` passes, the approval flips to `status: 'expired'` the next time it's looked at (list/get/approve/deny), and the original tool call can never be executed late.
 - **Single-use guarantee**: `approve()`/`deny()` are synchronous up to the point where they flip `status` away from `pending` — there is no `await` in between the status check and the status write. Because Node runs JS on a single thread, two calls racing to resolve the same approval (concurrent HTTP requests, a double click, a retried request) can never both see `pending`: the second call always sees the already-resolved status and is rejected with `Approval is already <status>`. There is nothing else to configure for this — it's guaranteed by construction, not by a lock.
 - **Revocation**: there's no separate "revoke" verb — deny a still-pending approval with `gateway.deny(approvalId, reason)` (or `agentgate approval deny <id> <reason>` from the CLI) to take it off the table before anyone acts on it.
-- **Duplicate requests**: each call to a protected tool creates its own approval with its own id — AgentGate does not de-duplicate identical-looking requests. If your agent might retry the same call, treat that as your integration's concern (e.g. an idempotency key on your own tool handler).
+- **Duplicate requests**: each call to a protected tool creates its own approval with its own id — MAGON does not de-duplicate identical-looking requests. If your agent might retry the same call, treat that as your integration's concern (e.g. an idempotency key on your own tool handler).
 
 ### Approval CLI
 
@@ -391,7 +391,7 @@ By default it talks to `http://localhost:8787` (what `agentgate dev` uses) and, 
 
 ## v1.1 — Developer Integration
 
-AgentGate now exposes a single developer-facing runtime:
+MAGON now exposes a single developer-facing runtime:
 
 ```js
 import { createAgentGate } from 'agentgate-runtime-control';
@@ -428,7 +428,7 @@ npx agentgate attack
 
 ### MCP
 
-Use `gate.withMCP()` to create an AgentGate-protected MCP gateway while keeping policy evaluation and approval handling in the same runtime.
+Use `gate.withMCP()` to create a MAGON-protected MCP gateway while keeping policy evaluation and approval handling in the same runtime.
 
 
 ## Attack Runner
@@ -443,7 +443,7 @@ The runner records replayable run IDs and reports blocked, approval-required, an
 
 ## Behavior Detection & Blast Radius (v1.4)
 
-AgentGate can analyze recorded runtime activity for deterministic behavior patterns such as suspicious tool chaining, repeated controlled actions, escalation attempts, and broad data access attempts. It also estimates blast radius from request metadata including scope, target count, environment, privilege, destructive behavior, exports, and transaction value. These are risk-analysis signals, not guarantees of actual impact.
+MAGON can analyze recorded runtime activity for deterministic behavior patterns such as suspicious tool chaining, repeated controlled actions, escalation attempts, and broad data access attempts. It also estimates blast radius from request metadata including scope, target count, environment, privilege, destructive behavior, exports, and transaction value. These are risk-analysis signals, not guarantees of actual impact.
 
 ```js
 const behavior = gate.behavior();
@@ -459,7 +459,7 @@ Security reports now include `behavior` and `blastRadius` sections.
 
 ## Persistent Control Plane (v1.5)
 
-AgentGate can persist runtime state without requiring a hosted database:
+MAGON can persist runtime state without requiring a hosted database:
 
 ```js
 const gate = createAgentGate({
@@ -479,7 +479,7 @@ The storage layer is an adapter, so a later Postgres/Supabase implementation can
 
 ## Identity & Authorization
 
-AgentGate v1.6 adds deterministic runtime authorization based on agent/user identity, roles, attributes, actions, tools, resources, and environment. Authorization is evaluated before the existing risk/policy engine. Explicit denies win, and configured authorization can use deny-by-default.
+MAGON v1.6 adds deterministic runtime authorization based on agent/user identity, roles, attributes, actions, tools, resources, and environment. Authorization is evaluated before the existing risk/policy engine. Explicit denies win, and configured authorization can use deny-by-default.
 
 ```js
 const gateway = createMCPGateway({
@@ -546,7 +546,7 @@ The active policy is synchronized into the gateway before it evaluates subsequen
 
 ## Identity & Authorization
 
-AgentGate supports deterministic RBAC and ABAC authorization using agent/user identity, roles, attributes, resource, action, tool, and environment. Explicit deny and deny-by-default can be enforced before normal risk policy evaluation.
+MAGON supports deterministic RBAC and ABAC authorization using agent/user identity, roles, attributes, resource, action, tool, and environment. Explicit deny and deny-by-default can be enforced before normal risk policy evaluation.
 
 ## Persistence
 
@@ -577,7 +577,7 @@ With `recoverFromCorruption: true`, the corrupt file is renamed to `<file>.corru
 **Write failures (disk full, permission denied, etc.) — v2.14.1.** A write failure (e.g. `ENOSPC` when the disk is full, or `EACCES`) is never swallowed: `save()` still throws every time, exactly as before. What's new is observability: the failure is also recorded on `writeErrors` in `gateway.persistenceHealth()` — `{ persistent, degraded, corruptions, writeErrors }` — and reflected the same way a recovered corruption is: `GET /api/ready` returns `503` with `persistence.degraded: true` while a write is failing. The moment a later write succeeds (disk space freed, permissions fixed), the failure clears itself automatically — no restart, no manual reset. Separately, a write failure thrown inside an HTTP request handler (approve/deny/register, etc.) is caught and answered as a clean `500` for that one request; it can no longer become an unhandled promise rejection that takes down the whole control-plane process over a single failed write.
 
 ## Multi-Tenant Control Plane (v1.8)
-AgentGate v1.8 adds tenant isolation, scoped API keys, key rotation/revocation, and tenant-scoped webhook registrations.
+MAGON v1.8 adds tenant isolation, scoped API keys, key rotation/revocation, and tenant-scoped webhook registrations.
 
 ### Tenant CLI
 ```bash
@@ -594,7 +594,7 @@ agentgate tenant revoke <key-id>
 - Tenant ID is part of the authorization boundary; a valid key for tenant A cannot authorize access to tenant B.
 
 ### Webhooks
-Webhooks are tenant-scoped and event-filtered. AgentGate records delivery attempts with event, payload, status, and attempt metadata for later delivery workers.
+Webhooks are tenant-scoped and event-filtered. MAGON records delivery attempts with event, payload, status, and attempt metadata for later delivery workers.
 
 
 ## Production Hardening (v2.1)
@@ -639,7 +639,7 @@ A stress test found that a request body larger than `maxBodySize` correctly retu
 
 ## Security hardening in v2.4
 
-For authenticated multi-tenant deployments, AgentGate treats the authenticated tenant identity as authoritative. Runtime runs and approvals carry `tenantId` and Control Plane reads, replay, approvals, behavior analysis, blast-radius analysis, webhooks and SSE are tenant-scoped. Request-body or query-string tenant overrides are rejected.
+For authenticated multi-tenant deployments, MAGON treats the authenticated tenant identity as authoritative. Runtime runs and approvals carry `tenantId` and Control Plane reads, replay, approvals, behavior analysis, blast-radius analysis, webhooks and SSE are tenant-scoped. Request-body or query-string tenant overrides are rejected.
 
 The MCP HTTP server is local-only by default. Non-local deployment requires an authentication hook. HTTP request bodies are size-limited. Webhook delivery blocks loopback, private, link-local and metadata targets, resolves DNS before delivery, and rejects redirects.
 
