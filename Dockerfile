@@ -6,6 +6,7 @@ COPY src ./src
 COPY bin ./bin
 COPY examples ./examples
 COPY schema ./schema
+COPY assets ./assets
 COPY standalone.html README.md LICENSE SECURITY.md ./
 ENV NODE_ENV=production
 ENV PORT=8787
