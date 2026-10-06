@@ -1,6 +1,560 @@
 <!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MAGON — AgentGate | Runtime Control for AI Agents</title><style>
-*{box-sizing:border-box;max-width:100%}html,body{margin:0;background:#070a12;color:#eaf0ff;font-family:Inter,Arial,sans-serif;overflow-x:hidden}body{margin:0}button{font:inherit;color:inherit;cursor:pointer}code,pre{overflow-wrap:anywhere;word-break:break-word}.card,.stat,.attack,.policy,.control{padding:12px 0;border-bottom:1px solid #171f2e}.control:last-child{border-bottom:0}min-width:0}.app{display:flex;min-height:100vh}.side{width:250px;border-right:1px solid #1b2334;padding:25px 16px;display:flex;flex-direction:column;background:#080b13}.brand{display:flex;flex-direction:column;padding:2px 10px 28px}.brandCompany{display:flex;align-items:center;gap:10px;line-height:1}.magonLogo{width:42px;height:30px;object-fit:contain;object-position:left center;display:block;flex:none}.brandCompany>div{display:flex;flex-direction:column;line-height:1}.brandName{font-size:24px;font-weight:850;letter-spacing:2.4px}.brandPunic{font-size:9px;letter-spacing:2px;color:#8b94a8;margin-top:4px}.brandProduct{display:flex;align-items:center;gap:10px;margin-top:12px;line-height:1}.agentgateLogo{width:34px;height:24px;object-fit:contain;display:block;flex:none}.brandProduct>div{display:flex;align-items:baseline;gap:7px}.brandProduct strong{font-size:13px;font-weight:750;letter-spacing:.4px}.brandProduct span{font-size:9px;font-weight:600;letter-spacing:.6px;color:#7aa2ff}.brandEyebrow{margin-top:10px;font-size:7px;font-weight:700;letter-spacing:1.5px;color:#6f788c}.mark,.brandText{display:none}.workspace,.card,.stat,.attack,.policy{border:1px solid #1b2334;background:#0d121e;border-radius:12px}.workspace{padding:11px;display:flex;gap:10px;align-items:center;font-size:12px}.avatar{width:31px;height:31px;border-radius:8px;background:#191f31;display:grid;place-items:center;color:#aaa1ff}.workspace small{display:block;color:#8993a8;margin-top:3px}.nav{margin-top:24px;display:grid;gap:5px}.nav button{background:none;border:0;text-align:left;padding:11px 12px;border-radius:9px;color:#8e99ad}.nav button.active,.nav button:hover{background:#141a28;color:white}.sideBottom{margin-top:auto;color:#687388;font-size:10px}.secure{color:#9aa5b9;padding:10px}.dot{display:inline-block;width:7px;height:7px;background:#3fe29a;border-radius:50%;margin-right:7px}main{flex:1;min-width:0}header{height:84px;border-bottom:1px solid #1b2334;padding:0 34px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#090d17,#080c15);position:relative}header>div:nth-child(2){min-width:0}header h1{font-size:21px;font-weight:750;letter-spacing:-.3px;margin-top:5px}header .eyebrow{opacity:.8}.mobileMenu{display:none;background:#111827;border:1px solid #232c40;border-radius:9px;width:38px;height:38px;font-size:18px;align-items:center;justify-content:center;flex:none}.mobileBrand{display:none}.mobileMark{display:none}.mobileMagonLogo{width:34px;height:24px;object-fit:contain;display:block;flex:none}.mobileBrand>div:first-child{display:flex;flex-direction:column;line-height:1}.mobileBrand>div:first-child strong{font-size:16px;font-weight:800;letter-spacing:1.5px}.mobileBrand>div:first-child small{font-size:7px;letter-spacing:1.5px;color:#8b94a8;margin-top:4px}.mobileProduct{display:flex;flex-direction:row!important;align-items:center;gap:6px;margin-left:8px;padding-left:8px;border-left:1px solid #293244;line-height:1!important}.mobileAgentgateLogo{width:25px;height:18px;object-fit:contain;display:block;flex:none}.mobileProduct>div{display:flex;flex-direction:column;line-height:1!important}.mobileProduct strong{font-size:10px;font-weight:700;letter-spacing:.4px}.mobileProduct small{font-size:7px;letter-spacing:.6px;color:#7aa2ff;margin-top:4px}.eyebrow{font-size:9px;letter-spacing:2px;color:#777f94}h1,h2,h3{margin:0}h1{font-size:21px}h2{font-size:39px;line-height:1.05;letter-spacing:-1.5px;margin-top:14px}.headerRight{display:flex;align-items:center;gap:10px}.headerRight .test{box-shadow:0 5px 18px #5278d622}.headerRight .search{font-size:11px}.search,.test,.ghost,.primary{border-radius:9px;padding:9px 13px}.search,.ghost{border:1px solid #232c40;background:#111827;color:#778397}.test,.primary{border:0;background:linear-gradient(135deg,#7aa2ff,#5278d6);font-weight:700}.content{padding:31px 34px;max-width:1300px;margin:auto}.hero,.labHero{border:1px solid #25213f;border-radius:20px;padding:42px 44px;background:radial-gradient(circle at 86% 30%,#17345e66,transparent 32%),radial-gradient(circle at 62% 100%,#161b3355,transparent 38%),linear-gradient(135deg,#111322,#0b101a);display:flex;justify-content:space-between;align-items:center;box-shadow:0 18px 45px #00000022}.hero>div:first-child,.labHero>div:first-child{min-width:0}.hero h2,.labHero h2{max-width:720px;font-weight:760}.hero p,.labHero p{margin-top:16px;max-width:670px;color:#98a2b5;line-height:1.7}.heroActions{display:flex;gap:10px;margin-top:27px}.heroActions button{min-height:38px}.pill{display:inline-block;color:#8eeac0;background:#0b261c;border:1px solid #1b5c43;border-radius:99px;padding:5px 9px;font-size:10px}.hero p,.labHero p,.sectionTitle p{color:#929caf;max-width:650px;line-height:1.6;font-size:14px}.heroActions{display:flex;gap:10px;margin-top:25px}.score{text-align:center;margin:0 30px 0 55px;flex:none}.ring{width:165px;height:165px;border-radius:50%;display:grid;place-content:center;background:conic-gradient(#7aa2ff 91%,#202538 0);position:relative;box-shadow:0 0 45px #5278d622}.ring strong{font-weight:800}.ring:after{content:'';position:absolute;inset:9px;background:#0c111d;border-radius:50%}.ring strong,.ring span{position:relative;z-index:1}.ring strong{font-size:39px}.ring span{font-size:8px;letter-spacing:1.5px}.score small{color:#55dba3}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 26px}.stat{padding:19px;border-color:#1d2638;background:linear-gradient(145deg,#0e1420,#0b101a);transition:border-color .2s,transform .2s}.stat:hover{border-color:#2b3b59;transform:translateY(-1px)}.stat span,.stat small{display:block;color:#7f899d;font-size:10px}.stat strong{display:block;font-size:25px;margin:8px 0 4px}.stat small{color:#4fcd98}.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px;align-items:start}.card{padding:22px;border-color:#202a3b;background:linear-gradient(145deg,#0d131e,#0a0f18)}.cardHead{display:flex;justify-content:space-between;margin-bottom:15px}.cardHead p,.quick{background:linear-gradient(145deg,#0e1420,#0b101a);border-color:#1d2638}.quick .control{margin-top:2px}.quick>p{color:#717c90;font-size:11px;margin-top:5px}.live{font-size:9px;color:#55dba3}.tr{display:grid;grid-template-columns:1.8fr .8fr .8fr .6fr;padding:12px 4px;border-top:1px solid #171e2c;font-size:11px}.th{color:#687388;font-size:9px;border:0}.muted{color:#788397}.decision{display:inline-block;border-radius:99px;padding:4px 7px;font-size:9px;font-weight:700}.allow{color:#4ee0a2;background:#0d2b20}.ask{color:#f5c66e;background:#2b2415}.block{color:#ff6f81;background:#311821}.control{display:flex;align-items:center;gap:10px;padding:13px 0;border-top:1px solid #171e2c}.control .grow{flex:1}.control small{display:block;color:#687388;font-size:9px;margin-top:3px}.on{font-size:8px;color:#4ee0a2;border:1px solid #275e4a;padding:3px 6px;border-radius:5px}.sectionTitle,.findingHead{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}.sectionTitle h3,.findingHead h3{font-size:16px;font-weight:750;letter-spacing:-.2px}.sectionTitle p{margin:5px 0 0}.attacks,.policyList{display:grid;gap:8px}.attack,.policy{padding:17px;display:flex;align-items:center;gap:15px}.num{color:#505b6e}.aBody,.policy .grow{flex:1}.aBody b,.policy b{font-size:12px}.aBody p,.policy p{font-size:10px;color:#747f93;margin-top:5px}.risk{font-size:7px;padding:3px 5px;border-radius:4px;margin-left:7px}.critical{color:#ff7183;background:#321a22}.high{color:#e8b866;background:#2e2717}.policy code{font-size:9px;color:#69758a;margin-left:10px}.replay{padding:35px}.trace{max-width:760px;margin:auto}.traceStep{margin:14px 0}.traceStep span{color:#668ee8;font-size:10px}.traceStep b{display:block;font-size:12px;margin:4px 0}.traceStep p{font-size:11px;color:#7b869a}.line{height:25px;border-left:1px dashed #394158;margin-left:5px}.toast{position:fixed;right:25px;bottom:25px;background:#e9e6ff;color:#17142c;padding:12px 16px;border-radius:10px;font-size:11px;font-weight:700}@media(max-width:900px){.mobileMenu{display:grid}.side.mobileOpen{display:flex;position:fixed;inset:0 auto 0 0;width:280px;z-index:45;box-shadow:18px 0 40px #0008;overflow:auto}.side{display:none}.mobileBrand{display:flex;align-items:center;gap:8px;line-height:1;margin-right:18px}.mobileBrand>div{display:flex;flex-direction:column;line-height:1}.mobileBrand strong{font-size:16px;letter-spacing:1.5px}.mobileBrand small{font-size:7px;letter-spacing:1px;color:#8b94a8;margin-top:5px}.mobileBrand+div{min-width:0}.content{padding:20px 16px}.hero,.labHero{display:block;padding:27px}.score{margin:25px 0}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}header{padding:0 18px}.search{display:none}}@media(max-width:520px){h2{font-size:31px}.heroActions{flex-direction:column}.headerRight .test{font-size:0}.headerRight .test:after{content:'⚡';font-size:14px}.tr{grid-template-columns:1.5fr .8fr .8fr}.tr span:last-child{display:none}.attack .decision{display:none}}.overlay{position:fixed;inset:0;background:#070a1299;display:grid;place-items:center;z-index:50}.modal{width:min(520px,90vw);max-height:85vh;overflow:auto;background:#0d121e;border:1px solid #232c40;border-radius:14px;padding:22px}.modal h3{font-size:15px;margin-bottom:6px}.modal p.hint{color:#929caf;font-size:11px;line-height:1.5;margin-bottom:14px}.modal label{display:block;font-size:10px;color:#8993a8;margin:12px 0 5px}.modal input,.modal textarea{width:100%;background:#111827;border:1px solid #232c40;border-radius:8px;color:#eaf0ff;padding:9px 10px;font:inherit;font-size:12px}.modal textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:11px;white-space:pre}.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}.modal .err{color:#ff6f81;font-size:11px;margin-top:8px;min-height:14px}
-</style></head><body><div class="app"><aside class="side"><div class="brand"><div class="brandCompany"><img class="magonLogo" src="/assets/branding/magon-logo.png" alt="MAGON"><div><span class="brandPunic">𐤌𐤂𐤍</span></div></div><div class="brandProduct"><img class="agentgateLogo" src="/assets/branding/agentgate-logo.png" alt="AgentGate"><div><span>by MAGON</span></div></div><div class="brandEyebrow">RUNTIME CONTROL PLANE</div></div><div class="workspace"><div class="avatar">AG</div><div><strong>Acme Agent</strong><small>Development</small></div></div><nav class="nav"><button class="active" data-tab="Overview">◉ &nbsp; Overview</button><button data-tab="Attack Lab">⚗ &nbsp; Attack Lab <small>NEW</small></button><button data-tab="Policies">▣ &nbsp; Policies</button><button data-tab="Replay">↻ &nbsp; Replay</button><button data-tab="Behavior">◌ &nbsp; Behavior</button><button data-tab="Blast Radius">◈ &nbsp; Blast Radius</button><button data-tab="Monitor">◉ &nbsp; Runtime Monitor</button><button data-tab="Observability">◒ &nbsp; Observability</button><button data-tab="Cost Control">＄ &nbsp; Cost Control</button></nav><div class="sideBottom"><div class="secure"><span class="dot"></span>Protection active</div><span id="verTag">AgentGate</span></div></aside><main><header><button class="mobileMenu" id="mobileMenu" aria-label="Open menu">☰</button><div class="mobileBrand"><img class="mobileMagonLogo" src="/assets/branding/magon-logo.png" alt="MAGON"><div><small>𐤌𐤂𐤍</small></div><div class="mobileProduct"><img class="mobileAgentgateLogo" src="/assets/branding/agentgate-logo.png" alt="AgentGate"><div><small>by MAGON</small></div></div></div><div><div class="eyebrow">RUNTIME CONTROL PLANE</div><h1 id="title">Overview</h1></div><div class="headerRight"><div class="search">⌕ &nbsp; Search</div><button class="test" id="test">⚡ Test agent</button></div></header><div id="content"></div></main></div><section class="card" style="margin:14px 34px 28px">
+*{box-sizing:border-box;max-width:100%}html,body{margin:0;background:#070a12;color:#eaf0ff;font-family:Inter,Arial,sans-serif;overflow-x:hidden}body{margin:0}button{font:inherit;color:inherit;cursor:pointer}code,pre{overflow-wrap:anywhere;word-break:break-word}.card,.stat,.attack,.policy,.control{padding:12px 0;border-bottom:1px solid #171f2e}.control:last-child{border-bottom:0}.app{display:flex;min-height:100vh}.side{width:250px;border-right:1px solid #1b2334;padding:25px 16px;display:flex;flex-direction:column;background:#080b13}.brand{display:flex;flex-direction:column;padding:2px 10px 28px}.brandCompany{display:flex;align-items:center;gap:11px;line-height:1;min-height:34px}.magonLogo{width:48px;height:34px;object-fit:contain;object-position:center;display:block;flex:none}.brandCompany>div{display:flex;flex-direction:column;line-height:1}.brandPunic{font-size:9px;letter-spacing:2px;color:#8b94a8}.brandProduct{display:flex;align-items:center;gap:9px;margin-top:14px;padding-left:2px;line-height:1}.agentgateLogo{width:38px;height:27px;object-fit:contain;object-position:center;display:block;flex:none}.brandProduct>div{display:flex;align-items:center;line-height:1}.brandProduct span{font-size:9px;font-weight:600;letter-spacing:.6px;color:#7aa2ff}.brandEyebrow{margin-top:11px;font-size:7px;font-weight:700;letter-spacing:1.5px;color:#6f788c;padding-left:2px}.mark,.brandText{display:none}.workspace,.card,.stat,.attack,.policy{border:1px solid #1b2334;background:#0d121e;border-radius:12px}.workspace{padding:11px;display:flex;gap:10px;align-items:center;font-size:12px}.avatar{width:31px;height:31px;border-radius:8px;background:#191f31;display:grid;place-items:center;color:#aaa1ff}.workspace small{display:block;color:#8993a8;margin-top:3px}.nav{margin-top:24px;display:grid;gap:5px}.nav button{background:none;border:0;text-align:left;padding:11px 12px;border-radius:9px;color:#8e99ad}.nav button.active,.nav button:hover{background:#141a28;color:white}.sideBottom{margin-top:auto;color:#687388;font-size:10px}.secure{color:#9aa5b9;padding:10px}.dot{display:inline-block;width:7px;height:7px;background:#3fe29a;border-radius:50%;margin-right:7px}main{flex:1;min-width:0}header{height:84px;border-bottom:1px solid #1b2334;padding:0 34px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#090d17,#080c15);position:relative}header>div:nth-child(2){min-width:0;margin-left:18px}header h1{font-size:21px;font-weight:750;letter-spacing:-.3px;margin-top:5px}header .eyebrow{opacity:.8}.mobileMenu{display:none;margin-right:4px;background:#111827;border:1px solid #232c40;border-radius:9px;width:38px;height:38px;font-size:18px;align-items:center;justify-content:center;flex:none}.mobileBrand{display:none}.mobileMark{display:none}.mobileMagonLogo{width:39px;height:28px;object-fit:contain;object-position:center;display:block;flex:none}.mobileBrand>div:first-child{display:flex;flex-direction:column;line-height:1}.mobileBrand>div:first-child strong{font-size:16px;font-weight:800;letter-spacing:1.5px}.mobileBrand>div:first-child small{font-size:7px;letter-spacing:1.5px;color:#8b94a8;margin-top:4px}.mobileProduct{display:flex;flex-direction:row!important;align-items:center;gap:3px;margin-left:2px;padding-left:5px;border-left:1px solid #293244;line-height:1!important}.mobileAgentgateLogo{width:30px;height:22px;object-fit:contain;object-position:center;display:block;flex:none}.mobileProduct>div{display:flex;flex-direction:column;line-height:1!important}.mobileProduct strong{font-size:10px;font-weight:700;letter-spacing:.4px}.mobileProduct em{display:block!important;margin-top:4px!important;font-size:6px!important;font-style:normal!important;font-weight:700!important;letter-spacing:1.15px!important;color:#6f788c!important;white-space:nowrap!important}.mobileProduct small{font-size:7px;letter-spacing:.6px;color:#7aa2ff;margin-top:4px}.mobileRuntime{display:block;font-size:6px;letter-spacing:1.1px;color:#6f788c;margin-top:5px;white-space:nowrap}.eyebrow{font-size:9px;letter-spacing:2px;color:#777f94}h1,h2,h3{margin:0}h1{font-size:21px}h2{font-size:39px;line-height:1.05;letter-spacing:-1.5px;margin-top:14px}.headerRight{display:flex;align-items:center;gap:10px}.headerRight .test{box-shadow:0 5px 18px #5278d622}.headerRight .search{font-size:11px}.search,.test,.ghost,.primary{border-radius:9px;padding:9px 13px}.search,.ghost{border:1px solid #232c40;background:#111827;color:#778397}.test,.primary{border:0;background:linear-gradient(135deg,#7aa2ff,#5278d6);font-weight:700}.content{padding:31px 34px;max-width:1300px;margin:auto}.hero,.labHero{border:1px solid #25213f;border-radius:20px;padding:42px 44px;background:radial-gradient(circle at 86% 30%,#17345e66,transparent 32%),radial-gradient(circle at 62% 100%,#161b3355,transparent 38%),linear-gradient(135deg,#111322,#0b101a);display:flex;justify-content:space-between;align-items:center;box-shadow:0 18px 45px #00000022}.hero>div:first-child,.labHero>div:first-child{min-width:0}.hero h2,.labHero h2{max-width:720px;font-weight:760}.hero p,.labHero p{margin-top:16px;max-width:670px;color:#98a2b5;line-height:1.7}.heroActions{display:flex;gap:10px;margin-top:27px}.heroActions button{min-height:38px}.pill{display:inline-block;color:#8eeac0;background:#0b261c;border:1px solid #1b5c43;border-radius:99px;padding:5px 9px;font-size:10px}.hero p,.labHero p,.sectionTitle p{color:#929caf;max-width:650px;line-height:1.6;font-size:14px}.heroActions{display:flex;gap:10px;margin-top:25px}.score{text-align:center;margin:0 30px 0 55px;flex:none}.ring{width:165px;height:165px;border-radius:50%;display:grid;place-content:center;background:conic-gradient(#7aa2ff 91%,#202538 0);position:relative;box-shadow:0 0 45px #5278d622}.ring strong{font-weight:800}.ring:after{content:'';position:absolute;inset:9px;background:#0c111d;border-radius:50%}.ring strong,.ring span{position:relative;z-index:1}.ring strong{font-size:39px}.ring span{font-size:8px;letter-spacing:1.5px}.score small{color:#55dba3}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 26px}.stat{padding:19px;border-color:#1d2638;background:linear-gradient(145deg,#0e1420,#0b101a);transition:border-color .2s,transform .2s}.stat:hover{border-color:#2b3b59;transform:translateY(-1px)}.stat span,.stat small{display:block;color:#7f899d;font-size:10px}.stat strong{display:block;font-size:25px;margin:8px 0 4px}.stat small{color:#4fcd98}.grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:16px;align-items:start}.card{padding:22px;border-color:#202a3b;background:linear-gradient(145deg,#0d131e,#0a0f18)}.cardHead{display:flex;justify-content:space-between;margin-bottom:15px}.cardHead p,.quick{background:linear-gradient(145deg,#0e1420,#0b101a);border-color:#1d2638}.quick .control{margin-top:2px}.quick>p{color:#717c90;font-size:11px;margin-top:5px}.live{font-size:9px;color:#55dba3}.tr{display:grid;grid-template-columns:1.8fr .8fr .8fr .6fr;padding:12px 4px;border-top:1px solid #171e2c;font-size:11px}.th{color:#687388;font-size:9px;border:0}.muted{color:#788397}.decision{display:inline-block;border-radius:99px;padding:4px 7px;font-size:9px;font-weight:700}.allow{color:#4ee0a2;background:#0d2b20}.ask{color:#f5c66e;background:#2b2415}.block{color:#ff6f81;background:#311821}.control{display:flex;align-items:center;gap:10px;padding:13px 0;border-top:1px solid #171e2c}.control .grow{flex:1}.control small{display:block;color:#687388;font-size:9px;margin-top:3px}.on{font-size:8px;color:#4ee0a2;border:1px solid #275e4a;padding:3px 6px;border-radius:5px}.sectionTitle,.findingHead{display:flex;justify-content:space-between;align-items:end;margin:38px 0 16px}.sectionTitle h3,.findingHead h3{font-size:16px;font-weight:750;letter-spacing:-.2px}.sectionTitle p{margin:5px 0 0}.attacks,.policyList{display:grid;gap:8px}.attack,.policy{padding:17px;display:flex;align-items:center;gap:15px}.num{color:#505b6e}.aBody,.policy .grow{flex:1}.aBody b,.policy b{font-size:12px}.aBody p,.policy p{font-size:10px;color:#747f93;margin-top:5px}.risk{font-size:7px;padding:3px 5px;border-radius:4px;margin-left:7px}.critical{color:#ff7183;background:#321a22}.high{color:#e8b866;background:#2e2717}.policy code{font-size:9px;color:#69758a;margin-left:10px}.replay{padding:35px}.trace{max-width:760px;margin:auto}.traceStep{margin:14px 0}.traceStep span{color:#668ee8;font-size:10px}.traceStep b{display:block;font-size:12px;margin:4px 0}.traceStep p{font-size:11px;color:#7b869a}.line{height:25px;border-left:1px dashed #394158;margin-left:5px}.toast{position:fixed;right:25px;bottom:25px;background:#e9e6ff;color:#17142c;padding:12px 16px;border-radius:10px;font-size:11px;font-weight:700}@media(max-width:900px){header{display:grid;grid-template-columns:auto minmax(0,auto) minmax(90px,1fr) auto;column-gap:8px;align-items:center;justify-content:initial;padding:0 14px}.mobileMenu{display:grid;margin:0;width:34px;height:34px}.side.mobileOpen{display:flex;position:fixed;inset:0 auto 0 0;width:280px;z-index:45;box-shadow:18px 0 40px #0008;overflow:auto}.side{display:none}.mobileBrand{display:flex;align-items:center;gap:5px;line-height:1;margin:0;min-width:0;white-space:nowrap}.mobileBrand>div{display:flex;flex-direction:column;line-height:1}.mobileBrand small{font-size:7px;letter-spacing:1px;color:#8b94a8;margin-top:4px}.mobileProduct{margin-left:3px;padding-left:6px;gap:3px}.mobileBrand+div{min-width:0;margin-left:8px;white-space:nowrap}.mobileBrand+div .eyebrow{font-size:7px;letter-spacing:1.4px;white-space:nowrap}.mobileBrand+div h1{font-size:16px;margin-top:3px;white-space:nowrap}.content{padding:20px 16px}.hero,.labHero{display:block;padding:27px}.score{margin:25px 0}.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.search{display:none}}@media(max-width:900px){.mobileProduct{display:flex!important;align-items:center!important;gap:5px!important;margin-left:3px!important;padding-left:7px!important;border-left:1px solid #293244!important}.mobileProduct>div{display:flex!important;flex-direction:column!important;align-items:flex-start!important;line-height:1!important}.mobileProduct small{display:block!important;font-size:7px!important;letter-spacing:.6px!important;color:#7aa2ff!important;margin:0!important;white-space:nowrap!important}.mobileRuntime{display:block!important;font-size:6px!important;letter-spacing:1px!important;color:#6f788c!important;margin-top:5px!important;white-space:nowrap!important}.mobileBrand+div{margin-left:8px!important}.mobileBrand+div h1{font-size:16px!important;margin:0!important;white-space:nowrap!important}}@media(max-width:520px){h1{font-size:16px}h2{font-size:22px;line-height:1.15;letter-spacing:-.4px}.hero h2,.labHero h2{font-size:22px}.hero p,.labHero p,.sectionTitle p{font-size:11px;line-height:1.45}.sectionTitle h3,.findingHead h3{font-size:13px}.card{padding:13px}.cardHead{margin-bottom:12px}.cardHead h3{font-size:13px}.cardHead p{font-size:10px}.stat strong{font-size:18px}.stat{padding:14px}.control{padding:10px 0}.control b{font-size:10px}.control small{font-size:8px}.tr{font-size:9px}.attack,.policy{padding:13px}.aBody b,.policy b{font-size:11px}.aBody p,.policy p{font-size:9px}.replay{padding:22px}.heroActions{flex-direction:column}.headerRight .test{font-size:0}.headerRight .test:after{content:'⚡';font-size:14px}.tr{grid-template-columns:1.5fr .8fr .8fr}.tr span:last-child{display:none}.attack .decision{display:none}}.overlay{position:fixed;inset:0;background:#070a1299;display:grid;place-items:center;z-index:50}.modal{width:min(520px,90vw);max-height:85vh;overflow:auto;background:#0d121e;border:1px solid #232c40;border-radius:14px;padding:22px}.modal h3{font-size:15px;margin-bottom:6px}.modal p.hint{color:#929caf;font-size:11px;line-height:1.5;margin-bottom:14px}.modal label{display:block;font-size:10px;color:#8993a8;margin:12px 0 5px}.modal input,.modal textarea{width:100%;background:#111827;border:1px solid #232c40;border-radius:8px;color:#eaf0ff;padding:9px 10px;font:inherit;font-size:12px}.modal textarea{min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:11px;white-space:pre}.modal .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}.modal .err{color:#ff6f81;font-size:11px;margin-top:8px;min-height:14px}
+</style><style id="magon-mobile-header">
+/* MAGON / AgentGate header system */
+
+.desktopHeaderTitle{
+  display:block;
+  min-width:0;
+  margin-left:18px;
+}
+
+.mobileBrand,
+.mobileAction{
+  display:none;
+}
+
+@media(max-width:900px){
+  header{
+    height:90px!important;
+    padding:0 14px!important;
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    column-gap:10px!important;
+    align-items:center!important;
+    background:linear-gradient(180deg,#090d17,#080c15)!important;
+    border-bottom:1px solid #20293a!important;
+  }
+
+  .mobileMenu{
+    display:grid!important;
+    width:34px!important;
+    height:34px!important;
+    margin:0!important;
+    padding:0!important;
+    place-items:center!important;
+    background:#111827!important;
+    border:1px solid #232c40!important;
+    border-radius:9px!important;
+    font-size:18px!important;
+  }
+
+  .mobileBrand{
+    display:flex!important;
+    align-items:center!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    gap:10px!important;
+    white-space:nowrap!important;
+  }
+
+  /* MAGON */
+  .mobileMagon{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    flex:none!important;
+    min-width:40px!important;
+  }
+
+  .mobileMagon img{
+    width:42px!important;
+    height:29px!important;
+    object-fit:contain!important;
+    display:block!important;
+  }
+
+  .mobileMagon span{
+    display:block!important;
+    font-size:6px!important;
+    font-weight:800!important;
+    letter-spacing:1.6px!important;
+    color:#8b94a8!important;
+    line-height:1!important;
+  }
+
+  /* AgentGate + runtime identity + page */
+  .mobileProduct{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    min-width:0!important;
+    overflow:hidden!important;
+    padding-left:11px!important;
+    border-left:1px solid #293244!important;
+  }
+
+  .mobileProduct>img{
+    width:46px!important;
+    height:32px!important;
+    object-fit:contain!important;
+    flex:none!important;
+    display:block!important;
+  }
+
+  .mobileProduct>div{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    min-width:0!important;
+    line-height:1!important;
+  }
+
+  .mobileProduct strong{
+    display:block!important;
+    font-size:13px!important;
+    font-weight:750!important;
+    letter-spacing:.2px!important;
+    color:#eaf0ff!important;
+    white-space:nowrap!important;
+  }
+
+  .mobileProduct em{
+    display:block!important;
+    margin-top:4px!important;
+    font-size:6px!important;
+    font-style:normal!important;
+    font-weight:700!important;
+    letter-spacing:1.15px!important;
+    color:#6f788c!important;
+    white-space:nowrap!important;
+  }
+
+  .mobileProduct small{
+    display:block!important;
+    margin-top:5px!important;
+    font-size:8px!important;
+    letter-spacing:.5px!important;
+    color:#7aa2ff!important;
+    white-space:nowrap!important;
+  }
+
+  /* Test action */
+  .mobileAction{
+    display:grid!important;
+    place-items:center!important;
+    min-width:0!important;
+  }
+
+  .mobileAction .test{
+    width:34px!important;
+    height:34px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:9px!important;
+    font-size:15px!important;
+    box-shadow:0 5px 18px #5278d622!important;
+  }
+
+  .desktopHeaderTitle,
+  .headerRight{
+    display:none!important;
+  }
+
+  .content{
+    padding:20px 16px;
+  }
+}
+
+@media(max-width:520px){
+  header{
+    height:90px!important;
+    padding:0 12px!important;
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    column-gap:8px!important;
+  }
+
+  .mobileBrand{
+    gap:7px!important;
+  }
+
+  .mobileMagon{
+    min-width:35px!important;
+  }
+
+  .mobileMagon img{
+    width:37px!important;
+    height:26px!important;
+  }
+
+  .mobileMagon span{
+    font-size:5px!important;
+  }
+
+  .mobileProduct{
+    gap:7px!important;
+    padding-left:9px!important;
+  }
+
+  .mobileProduct>img{
+    width:43px!important;
+    height:30px!important;
+  }
+
+  .mobileProduct strong{
+    font-size:12px!important;
+  }
+
+  .mobileProduct em{
+    font-size:5.5px!important;
+    letter-spacing:1px!important;
+  }
+
+  .mobileProduct small{
+    font-size:7px!important;
+  }
+
+  .mobileAction .test{
+    width:32px!important;
+    height:32px!important;
+    font-size:14px!important;
+  }
+}
+
+
+</style><style id="status-system">
+/* ---------- Unified runtime status system ---------- */
+
+.live,
+.on{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  min-height:22px!important;
+  padding:4px 8px!important;
+  border-radius:999px!important;
+  font-size:8px!important;
+  font-weight:750!important;
+  line-height:1!important;
+  letter-spacing:.7px!important;
+  white-space:nowrap!important;
+  flex:none!important;
+  box-sizing:border-box!important;
+}
+
+.live{
+  color:#55dba3!important;
+  background:#0b211a!important;
+  border:1px solid #1b4d3c!important;
+}
+
+.on{
+  color:#69e2ae!important;
+  background:#0d211b!important;
+  border:1px solid #275e4a!important;
+}
+
+.cardHead{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:14px!important;
+  min-width:0!important;
+}
+
+.cardHead>div:first-child{
+  min-width:0!important;
+}
+
+.cardHead>.live,
+.cardHead>.on{
+  margin-left:auto!important;
+  margin-top:1px!important;
+}
+
+.sectionTitle,
+.findingHead{
+  align-items:flex-start!important;
+  gap:16px!important;
+}
+
+.sectionTitle>div,
+.findingHead>div{
+  min-width:0!important;
+}
+
+.sectionTitle>.live,
+.sectionTitle>.on,
+.findingHead>.live,
+.findingHead>.on{
+  margin-left:auto!important;
+  margin-top:2px!important;
+}
+
+@media(max-width:700px){
+  .cardHead{
+    gap:9px!important;
+  }
+
+  .cardHead>.live,
+  .cardHead>.on{
+    margin-left:auto!important;
+  }
+
+  .sectionTitle,
+  .findingHead{
+    gap:9px!important;
+  }
+
+  .sectionTitle>.live,
+  .sectionTitle>.on,
+  .findingHead>.live,
+  .findingHead>.on{
+    margin-left:auto!important;
+  }
+
+  .live,
+  .on{
+    min-height:20px!important;
+    padding:4px 7px!important;
+    font-size:7px!important;
+    letter-spacing:.55px!important;
+  }
+}
+
+@media(max-width:520px){
+  .cardHead{
+    gap:7px!important;
+  }
+
+  .sectionTitle,
+  .findingHead{
+    gap:7px!important;
+  }
+
+  .live,
+  .on{
+    min-height:19px!important;
+    padding:3px 6px!important;
+    font-size:6.5px!important;
+    letter-spacing:.45px!important;
+  }
+}
+</style>
+<style id="mobile-layout-fix">
+@media(max-width:900px){
+  #content{
+    padding:20px 16px 28px!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+
+  #content .hero,
+  #content .labHero{
+    width:100%!important;
+    margin:0!important;
+  }
+
+  #content .sectionTitle,
+  #content .findingHead{
+    width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+
+  #content .card,
+  #content .stats,
+  #content .grid,
+  #content .attacks,
+  #content .policyList{
+    width:100%!important;
+  }
+
+  #content .sectionTitle{
+    gap:14px!important;
+  }
+
+  #content .sectionTitle>button{
+    align-self:flex-start!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+  }
+
+  .mobileMagon img{
+    width:50px!important;
+    height:34px!important;
+  }
+
+  .mobileProduct>img{
+    width:52px!important;
+    height:36px!important;
+  }
+
+  .mobileProduct strong{
+    font-size:13px!important;
+  }
+}
+
+@media(max-width:520px){
+  #content{
+    padding:18px 14px 26px!important;
+  }
+
+  #content .sectionTitle{
+    margin-top:28px!important;
+  }
+
+  #content .sectionTitle>button{
+    width:auto!important;
+    min-height:42px!important;
+    padding:10px 14px!important;
+    font-size:12px!important;
+  }
+
+  .mobileMagon img{
+    width:48px!important;
+    height:33px!important;
+  }
+
+  .mobileProduct>img{
+    width:50px!important;
+    height:35px!important;
+  }
+}
+</style>
+
+<style id="mobile-brand-final">
+@media(max-width:900px){
+  header{
+    grid-template-columns:34px minmax(0,1fr) 34px!important;
+    column-gap:8px!important;
+  }
+
+  .mobileBrand{
+    width:100%!important;
+    min-width:0!important;
+    gap:10px!important;
+    overflow:hidden!important;
+  }
+
+  .mobileMagon{
+    flex:none!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:5px!important;
+  }
+
+  .mobileMagon img{
+    width:58px!important;
+    height:40px!important;
+  }
+
+  .mobileMagon span{
+    font-size:9px!important;
+    font-weight:800!important;
+    letter-spacing:1.2px!important;
+  }
+
+  .mobileProduct{
+    flex:1!important;
+    min-width:0!important;
+    margin-left:0!important;
+    padding-left:10px!important;
+    gap:8px!important;
+    overflow:hidden!important;
+  }
+
+  .mobileProduct>img{
+    width:78px!important;
+    height:54px!important;
+    flex:none!important;
+  }
+
+  .mobileProduct>div{
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+
+  .mobileProduct strong{
+    display:block!important;
+    font-size:16px!important;
+    font-weight:800!important;
+    letter-spacing:.4px!important;
+    color:#eaf0ff!important;
+    white-space:nowrap!important;
+  }
+
+  .mobileProduct em{
+    display:block!important;
+    font-size:7px!important;
+    letter-spacing:1px!important;
+    color:#8b94a8!important;
+    white-space:nowrap!important;
+    margin-top:5px!important;
+  }
+
+  .mobileProduct small{
+    display:block!important;
+    font-size:9px!important;
+    font-weight:700!important;
+    color:#7aa2ff!important;
+    margin-top:5px!important;
+    white-space:nowrap!important;
+  }
+}
+
+@media(max-width:520px){
+  .mobileMagon img{
+    width:54px!important;
+    height:37px!important;
+  }
+
+  .mobileProduct>img{
+    width:70px!important;
+    height:48px!important;
+  }
+
+  .mobileProduct strong{
+    font-size:15px!important;
+  }
+
+  .mobileProduct em{
+    font-size:6px!important;
+  }
+
+  .mobileProduct small{
+    font-size:8px!important;
+  }
+}
+</style>
+</head><body><div class="app"><aside class="side"><div class="brand"><div class="brandCompany"><img class="magonLogo" src="/assets/branding/magon-logo.png" alt="MAGON"><div><span class="brandPunic">𐤌𐤂𐤍</span></div></div><div class="brandProduct"><img class="agentgateLogo" src="/assets/branding/agentgate-logo.png" alt="AgentGate"><div><span>by MAGON</span></div></div><div class="brandEyebrow">RUNTIME CONTROL PLANE</div></div><div class="workspace"><div class="avatar">AG</div><div><strong>Acme Agent</strong><small>Development</small></div></div><nav class="nav"><button class="active" data-tab="Overview">◉ &nbsp; Overview</button><button data-tab="Attack Lab">⚗ &nbsp; Attack Lab <small>NEW</small></button><button data-tab="Policies">▣ &nbsp; Policies</button><button data-tab="Replay">↻ &nbsp; Replay</button><button data-tab="Behavior">◌ &nbsp; Behavior</button><button data-tab="Blast Radius">◈ &nbsp; Blast Radius</button><button data-tab="Monitor">◉ &nbsp; Runtime Monitor</button><button data-tab="Observability">◒ &nbsp; Observability</button><button data-tab="Cost Control">＄ &nbsp; Cost Control</button></nav><div class="sideBottom"><div class="secure"><span class="dot"></span>Protection active</div><span id="verTag">AgentGate</span></div></aside><main><header>
+  <button class="mobileMenu" id="mobileMenu" aria-label="Open menu">☰</button>
+
+  <div class="mobileBrand">
+    <div class="mobileMagon">
+      <img src="/assets/branding/magon-logo.png" alt="MAGON">
+      <span>MAGON</span>
+    </div>
+
+    <div class="mobileProduct">
+      <img src="/assets/branding/agentgate-logo.png" alt="AgentGate">
+      <div>
+        <strong>AgentGate</strong>
+        <em>RUNTIME CONTROL PLANE</em>
+        <small id="mobilePageTitle">Overview</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="mobileAction">
+    <button class="test" id="mobileTest" aria-label="Test agent" title="Test agent">⚡</button>
+  </div>
+
+  <div class="desktopHeaderTitle">
+    <div class="eyebrow">RUNTIME CONTROL PLANE</div>
+    <h1 id="title">Overview</h1>
+  </div>
+
+  <div class="headerRight">
+    <div class="search">⌕ &nbsp; Search</div>
+    <button class="test" id="test">⚡ Test agent</button>
+  </div>
+</header><div id="content"></div></main></div><section id="aboutMagon" class="card" style="margin:14px 34px 28px">
 <div class="cardHead"><div><h3>About MAGON</h3><p>Ancient roots. Modern control.</p></div></div>
 <p style="color:#929caf;max-width:760px;line-height:1.7;font-size:12px;margin:0">
 <strong style="color:#eaf0ff">MAGON · 𐤌𐤂𐤍</strong> is the umbrella identity behind AgentGate.
@@ -8,7 +562,9 @@ The name draws from the ancient Punic and Carthaginian name <em>Magon</em>, conn
 AgentGate is the first product under MAGON, built to provide runtime control for AI agents.
 </p>
 </section><script>
-const content=document.getElementById('content'),title=document.getElementById('title');const mobileMenu=document.getElementById('mobileMenu'),side=document.querySelector('.side');if(mobileMenu)mobileMenu.onclick=()=>side.classList.toggle('mobileOpen');let toastTimer;
+const content=document.getElementById('content'),title=document.getElementById('title');const mobileMenu=document.getElementById('mobileMenu'),side=document.querySelector('.side');
+const mobileTest=document.getElementById('mobileTest'),test=document.getElementById('test');
+if(mobileTest&&test)mobileTest.onclick=()=>test.click();if(mobileMenu)mobileMenu.onclick=()=>side.classList.toggle('mobileOpen');let toastTimer;
 const decision=t=>`<span class="decision ${t.toLowerCase()}">${t}</span>`;
 function openModal(html){closeModal();const o=document.createElement('div');o.className='overlay';o.id='modalOverlay';o.innerHTML=`<div class="modal">${html}</div>`;o.addEventListener('click',e=>{if(e.target===o)closeModal()});document.body.appendChild(o);return o}
 function closeModal(){document.getElementById('modalOverlay')?.remove()}
@@ -122,7 +678,7 @@ async function costControl(){
   }catch(e){document.getElementById('costStats').innerHTML='<div class="card"><p class="muted">Cost API unavailable.</p></div>'}
 }
 
-function show(tab){title.textContent=tab;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));({Overview:overview,'Attack Lab':attack,Policies:policies,Replay:replay,Behavior:behavior,'Blast Radius':blast,Monitor:monitor,Observability:observability,'Cost Control':costControl}[tab])()}
+function show(tab){const mobilePageTitle=document.getElementById('mobilePageTitle');if(mobilePageTitle)mobilePageTitle.textContent=tab;side.classList.remove('mobileOpen');document.getElementById('aboutMagon').style.display=tab==='Overview'?'block':'none';title.textContent=tab;document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));({Overview:overview,'Attack Lab':attack,Policies:policies,Replay:replay,Behavior:behavior,'Blast Radius':blast,Monitor:monitor,Observability:observability,'Cost Control':costControl}[tab])()}
 function notify(t){clearTimeout(toastTimer);let x=document.querySelector('.toast');if(!x){x=document.createElement('div');x.className='toast';document.body.appendChild(x)}x.textContent='✓ '+t;toastTimer=setTimeout(()=>x.remove(),2200)}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));document.getElementById('test').onclick=()=>show('Attack Lab');overview();fetch('/api/health',{cache:'no-store'}).then(r=>r.json()).then(d=>{const v=document.getElementById('verTag');if(v&&d.version)v.textContent='AgentGate v'+d.version}).catch(()=>{});
 </script></body></html>
