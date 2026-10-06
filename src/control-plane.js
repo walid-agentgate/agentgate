@@ -14,6 +14,7 @@ import { SlidingWindowLimiter } from './telemetry.js';
 import { createSaaSControl } from './saas.js';
 import { runGatewayAttackLab, summarizeAttackResults } from './attack-lab.js';
 import { createRequire } from 'node:module';
+import { readFile } from 'node:fs/promises';
 
 const require = createRequire(import.meta.url);
 const PACKAGE_VERSION = require('../package.json').version;
@@ -205,8 +206,34 @@ export function createControlPlane(options = {}) {
     return { error: 'Not found' };
   }
 
+  const brandingAssets = {
+    '/assets/branding/magon-logo.png': {
+      file: 'assets/branding/magon-logo.png',
+      type: 'image/png'
+    },
+    '/assets/branding/agentgate-logo.png': {
+      file: 'assets/branding/agentgate-logo.png',
+      type: 'image/png'
+    }
+  };
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
+    if (req.method === 'GET' && brandingAssets[url.pathname]) {
+      const asset = brandingAssets[url.pathname];
+      try {
+        const data = await readFile(new URL(`../${asset.file}`, import.meta.url));
+        res.writeHead(200, {
+          'content-type': asset.type,
+          'cache-control': 'public, max-age=86400'
+        });
+        res.end(data);
+      } catch {
+        res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+        res.end('Branding asset not found');
+      }
+      return;
+    }
     if (url.pathname === '/' && req.method === 'GET' && staticHtml) {
       const headers = { 'content-type': 'text/html; charset=utf-8' };
       if (localDevSession) headers['set-cookie'] = `${localSessionCookie}=${localSessionToken}; HttpOnly; SameSite=Lax; Path=/`;
