@@ -1,6 +1,6 @@
 {
   "name": "agentgate-runtime-control",
-  "version": "2.14.10",
+  "version": "2.14.11",
   "type": "module",
   "description": "Runtime control plane and SaaS governance layer for AI agent tool execution",
   "exports": {
