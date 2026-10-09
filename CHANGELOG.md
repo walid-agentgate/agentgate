@@ -1,3 +1,10 @@
+# 2.14.12 — Local Dev Session Hardening
+
+- **`agentgate dev` now binds to `127.0.0.1` by default.** Previously it listened on all interfaces. Set `HOST=0.0.0.0` to expose it deliberately (for example in a container).
+- **Local dev session no longer bypasses admin scopes when the server is not on loopback.** In that demo mode, routes requiring `admin:*` (keys, tenants, kill-switch, billing) answer `401` to a local-session cookie, while read and demo routes keep working.
+- **Dockerfile sets `HOST=0.0.0.0`** so containerised demos stay reachable but run in demo mode without admin routes.
+- Local development on loopback is unchanged. `.agentgate/` runtime state is no longer tracked in git.
+
 # 2.14.8 — CLI Packaging & Release Hardening
 
 - **Fixed CLI executable permissions.** `bin/agentgate.js` is now packaged with standard executable permissions so `npx agentgate-runtime-control@2.14.8 --help` runs correctly instead of failing with `Permission denied`.
