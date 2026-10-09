@@ -423,13 +423,15 @@ By default this talks to a locally running \`agentgate dev\` server at http://lo
   const port = Number(portArgIndex >= 0 ? process.argv[portArgIndex + 1] : process.env.PORT || 8787);
   if (!Number.isInteger(port) || port < 1 || port > 65535) { console.error('Invalid port. Use --port <1-65535> or PORT=<port>.'); process.exitCode = 1; }
   else {
-    const { server } = createControlPlane({ gateway, html, localDevSession: true });
+    const host = process.env.HOST || '127.0.0.1';
+    const isLoopbackHost = ['127.0.0.1', '::1', 'localhost'].includes(host);
+    const { server } = createControlPlane({ gateway, html, localDevSession: true, localSessionAdmin: isLoopbackHost });
     server.on('error', error => {
       if (error?.code === 'EADDRINUSE') console.error(`Port ${port} is already in use. Use agentgate dev --port <port> or PORT=<port>.`);
       else console.error(`AgentGate dev server error: ${error?.message || error}`);
       process.exitCode = 1;
     });
-    server.listen(port, () => console.log(`AgentGate Control Plane: http://localhost:${port}`));
+    server.listen(port, host, () => console.log(`AgentGate Control Plane: http://${host === '0.0.0.0' ? 'localhost' : host}:${port}` + (isLoopbackHost ? '' : ' (demo mode: admin routes disabled for local session)')));
   }
 } else {
   showHelp();

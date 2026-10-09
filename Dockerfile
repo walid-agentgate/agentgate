@@ -10,5 +10,6 @@ COPY assets ./assets
 COPY standalone.html README.md LICENSE SECURITY.md ./
 ENV NODE_ENV=production
 ENV PORT=8787
+ENV HOST=0.0.0.0
 EXPOSE 8787
 CMD ["node", "bin/agentgate.js", "dev"]

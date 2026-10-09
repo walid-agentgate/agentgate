@@ -59,6 +59,7 @@ export function createControlPlane(options = {}) {
   const webhookRegistry = options.webhookRegistry || new WebhookRegistry({ filePath: `${options.persistence || '.agentgate'}/webhooks.json`, deliveryPath: `${options.persistence || '.agentgate'}/webhook-deliveries.json` });
   const authRequired = options.authRequired !== false;
   const localDevSession = options.localDevSession === true;
+  const localSessionAdmin = options.localSessionAdmin === true;
   const localSessionToken = localDevSession ? randomBytes(32).toString('hex') : null;
   const localSessionCookie = 'agentgate_local_session';
   const hasLocalSession = (req) => localDevSession && String(req.headers.cookie || '').split(';').map(x => x.trim()).some(x => x === `${localSessionCookie}=${localSessionToken}`);
@@ -280,7 +281,7 @@ export function createControlPlane(options = {}) {
       let authContext = {};
       if (authRequired) {
         const bootstrapCreate = url.pathname === '/api/tenants/create' && req.method === 'POST' && bootstrapToken && req.headers['x-agentgate-bootstrap'] === bootstrapToken && tenantRegistry.list().length === 0;
-        const auth = bootstrapCreate ? { ok: true, bootstrap: true } : (hasLocalSession(req) ? { ok: true, local: true } : authenticate(req, url.pathname, scope));
+        const auth = bootstrapCreate ? { ok: true, bootstrap: true } : ((hasLocalSession(req) && (localSessionAdmin || scope !== 'admin:*')) ? { ok: true, local: true } : authenticate(req, url.pathname, scope));
         authContext = auth;
         if (!auth.ok) { res.writeHead(auth.status, {'content-type':'application/json','cache-control':'no-store'}); res.end(JSON.stringify({error:auth.error})); return; }
         if (auth.tenantId && body.tenantId && body.tenantId !== auth.tenantId) { res.writeHead(403, {'content-type':'application/json'}); res.end(JSON.stringify({error:'Tenant mismatch'})); return; }
