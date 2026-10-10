@@ -82,22 +82,22 @@ await tryCall('export_all', protectedExportAll, { environment: env });
 console.log('\nNothing above BLOCK or pending ASK ever reached its real handler.');
 console.log('See gate.approvals() to review and approve pending ASK requests.');
 
-// --- The gap `unknownActionPolicy` closes ---
+// --- What happens to an action AgentGate has never seen ---
 //
-// AgentGate only recognizes a small built-in list of "destructive" action
-// names (delete, refund, publish, deploy, export_all, update_production).
-// A tool using ANY other action name — a typo, a new tool, a third-party
-// integration's own naming — falls through every rule above and is
-// ALLOWED by default. That is not a bug in the rules you just saw; it's
-// the deliberate (but risky) default, so watch what happens to an
-// unclassified but obviously dangerous-sounding action name:
+// AgentGate recognizes a small built-in list of read-only names (read,
+// search, list, get, fetch) and destructive names (delete, refund, publish,
+// deploy, export_all, update_production). A tool using ANY other action name
+// — a typo, a new tool, a third-party integration's own naming — is
+// "unrecognized". By default it is held for approval (ASK), so a new
+// dangerous-sounding action cannot slip through silently:
 async function grantAdmin({ userId }) { return { granted: userId }; }
-const looseGate = gate; // same gate as above — policies do NOT set unknownActionPolicy
-const protectedGrantAdminLoose = looseGate.protect(grantAdmin, { tool: 'grant_admin', action: 'grant_admin' });
-await tryCall('grant_admin (default)', protectedGrantAdminLoose, { userId: 'u_1', environment: env });
-console.log('^ That ALLOWed by default — AgentGate has never seen this action name before.\n');
+const defaultGate = gate; // same gate as above — policies do NOT set unknownActionPolicy
+const protectedGrantAdminDefault = defaultGate.protect(grantAdmin, { tool: 'grant_admin', action: 'grant_admin' });
+await tryCall('grant_admin (default)', protectedGrantAdminDefault, { userId: 'u_1', environment: env });
+console.log('^ Held for approval by default — AgentGate has never seen this action name before.\n');
 
-// Fix it by setting unknownActionPolicy: 'ask' (or 'block') on the gate:
+// Strict setups can go further: unknownActionPolicy: 'block' refuses unrecognized
+// actions outright, with no approval possible.
 const strictGate = createAgentGate({
   agent: 'SupportAgent',
   mode: 'enforce',
@@ -105,10 +105,10 @@ const strictGate = createAgentGate({
     productionBlock: true,
     approvalAmount: 5000,
     blockActions: ['export_all'],
-    unknownActionPolicy: 'ask' // <- the fix: unrecognized actions now ASK instead of ALLOW
+    unknownActionPolicy: 'block' // <- stricter than the default: unrecognized actions are refused
   }
 });
 const protectedGrantAdminStrict = strictGate.protect(grantAdmin, { tool: 'grant_admin', action: 'grant_admin' });
-await tryCall('grant_admin (unknownActionPolicy: ask)', protectedGrantAdminStrict, { userId: 'u_1', environment: env });
-console.log('^ Same unrecognized action, now held for approval instead of silently executing.');
-console.log('`agentgate doctor` warns loudly whenever unknownActionPolicy is left at its default.');
+await tryCall('grant_admin (unknownActionPolicy: block)', protectedGrantAdminStrict, { userId: 'u_1', environment: env });
+console.log('^ Same unrecognized action, now refused outright instead of waiting for approval.');
+console.log('`agentgate doctor` rejects an explicit unknownActionPolicy: allow in enforce mode.');
